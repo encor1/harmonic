@@ -221,7 +221,7 @@ input:disabled {
 
 .transport {
   display: grid;
-  grid-template-columns: auto minmax(0, 1fr);
+  grid-template-columns: auto minmax(0, 1fr) auto;
   gap: 12px;
   align-items: center;
   padding: 14px 16px;
@@ -232,6 +232,14 @@ input:disabled {
   margin: 0;
   color: var(--muted);
   font-size: 13px;
+}
+
+.performance-readout {
+  min-width: 116px;
+  color: #92ff66;
+  font-family: "Courier New", monospace;
+  font-size: 12px;
+  text-align: right;
 }
 
 input[type="range"] {

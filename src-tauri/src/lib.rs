@@ -12,6 +12,7 @@ use tauri::{AppHandle, Emitter, State};
 
 const SAMPLE_RATE: f32 = 44_100.0;
 const SAMPLE_WINDOW: usize = 2048;
+const SAMPLE_HOP: usize = 512;
 const BAND_COUNT: usize = 64;
 
 #[derive(Default)]
@@ -57,7 +58,7 @@ fn start_linux_audio(app: AppHandle, state: State<'_, CaptureState>) -> Result<(
                 "--format=s16le",
                 "--rate=44100",
                 "--channels=1",
-                "--latency-msec=50",
+                "--latency-msec=25",
             ])
             .stdout(Stdio::piped())
             .stderr(Stdio::null())
@@ -119,7 +120,7 @@ fn read_audio_stream<R: Read>(mut stream: R, app: AppHandle, running: Arc<Atomic
         while samples.len() >= SAMPLE_WINDOW {
             let payload = analyze_samples(&samples[..SAMPLE_WINDOW]);
             let _ = app.emit("spectrum", payload);
-            samples.drain(..SAMPLE_WINDOW);
+            samples.drain(..SAMPLE_HOP);
         }
     }
 }

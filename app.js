@@ -6,6 +6,7 @@ const emptyState = document.getElementById("emptyState");
 const statusText = document.getElementById("statusText");
 const statusTextInline = document.getElementById("statusTextInline");
 const levelReadout = document.getElementById("levelReadout");
+const performanceReadout = document.getElementById("performanceReadout");
 const trackTitle = document.getElementById("trackTitle");
 const gainControl = document.getElementById("gain");
 const falloffControl = document.getElementById("falloff");
@@ -34,6 +35,13 @@ let nativeUnlisten = null;
 let pulsePhase = 0;
 let modeSignature = "";
 let particles = [];
+let renderFrameCount = 0;
+let audioFrameCount = 0;
+let lastRenderMetricTime = performance.now();
+let lastRenderTime = performance.now();
+let lastAudioMetricTime = performance.now();
+let renderFps = 0;
+let audioFps = 0;
 const spectrogramCanvas = document.createElement("canvas");
 const spectrogramCtx = spectrogramCanvas.getContext("2d");
 
@@ -79,6 +87,7 @@ function resetToIdle(message = "Start Spotify, then capture the audio output.") 
   trackTitle.textContent = "Spotify Audio";
   setStatus(message);
   levelReadout.textContent = "IDLE";
+  performanceReadout.textContent = "VIS -- / AUD --";
   emptyState.classList.remove("is-hidden");
 }
 
@@ -96,6 +105,7 @@ async function startNativeCapture() {
   if (!nativeUnlisten) {
     nativeUnlisten = await listen("spectrum", (event) => {
       nativeSpectrum = event.payload;
+      registerAudioFrame();
       levelReadout.textContent = `${String(nativeSpectrum.level).padStart(2, "0")}%`;
     });
   }
@@ -126,7 +136,7 @@ function setCaptureReady(stream) {
   const context = ensureAudioContext();
   analyser = context.createAnalyser();
   analyser.fftSize = 2048;
-  analyser.smoothingTimeConstant = 0.68;
+  analyser.smoothingTimeConstant = 0.42;
   frequencyData = new Uint8Array(analyser.frequencyBinCount);
   timeData = new Uint8Array(analyser.fftSize);
 
@@ -292,6 +302,28 @@ function updateLevelReadout() {
   levelReadout.textContent = `${String(percent).padStart(2, "0")}%`;
 }
 
+function registerAudioFrame() {
+  audioFrameCount += 1;
+}
+
+function updatePerformanceReadout(now) {
+  renderFrameCount += 1;
+
+  if (now - lastRenderMetricTime >= 1000) {
+    renderFps = Math.round((renderFrameCount * 1000) / (now - lastRenderMetricTime));
+    renderFrameCount = 0;
+    lastRenderMetricTime = now;
+  }
+
+  if (now - lastAudioMetricTime >= 1000) {
+    audioFps = Math.round((audioFrameCount * 1000) / (now - lastAudioMetricTime));
+    audioFrameCount = 0;
+    lastAudioMetricTime = now;
+  }
+
+  performanceReadout.textContent = `VIS ${String(renderFps).padStart(2, "0")} / AUD ${String(audioFps).padStart(2, "0")}`;
+}
+
 function getPaletteColor(colors, progress) {
   if (progress > 0.78) {
     return colors[3];
@@ -412,19 +444,12 @@ function enhanceValues(values) {
   }
 
   const balancedValues = balanceSpectrum(values);
-  const average = balancedValues.reduce((sum, value) => sum + value, 0) / balancedValues.length;
-  const peak = balancedValues.reduce((max, value) => Math.max(max, value), 0);
-  const floor = Math.min(24, average * 0.12 + peak * 0.035);
 
   return balancedValues.map((value, index) => {
     const left = balancedValues[Math.max(0, index - 1)] || 0;
     const right = balancedValues[Math.min(balancedValues.length - 1, index + 1)] || 0;
-    const wideLeft = balancedValues[Math.max(0, index - 3)] || 0;
-    const wideRight = balancedValues[Math.min(balancedValues.length - 1, index + 3)] || 0;
-    const neighbor = Math.max(left, right) * 0.16;
-    const wide = Math.max(wideLeft, wideRight) * 0.05;
-    const movement = floor * (0.45 + Math.sin(pulsePhase + index * 0.37) * 0.18);
-    return softLimit(value + neighbor + wide + movement);
+    const neighbor = Math.max(left, right) * 0.08;
+    return softLimit(value + neighbor);
   });
 }
 
@@ -435,6 +460,7 @@ function getAnalyzerValues() {
   const values = [];
 
   analyser.getByteFrequencyData(frequencyData);
+  registerAudioFrame();
   updateLevelReadout();
 
   for (let index = 0; index < bars; index += 1) {
@@ -562,8 +588,9 @@ function drawWave(width, height, values) {
       const x = (i / Math.max(1, points - 1)) * width;
       const value = Math.min(255, values[i] * gain);
       const normalized = Math.pow(value / 255, 1.12);
-      const direction = Math.sin(pulsePhase * (1.2 + layer * 0.16) + i * 0.34 + layer);
-      const y = centerY + direction * (20 + normalized * maxHeight * (1 - layer * 0.18));
+      const phaseOffset = normalized * 0.95 + layer * 0.4;
+      const direction = Math.sin(i * 0.34 + phaseOffset);
+      const y = centerY + direction * (8 + normalized * maxHeight * (1 - layer * 0.18));
 
       if (i === 0) {
         ctx.moveTo(x, y);
@@ -589,7 +616,7 @@ function drawOrbit(width, height, values) {
 
   ctx.save();
   ctx.translate(centerX, centerY);
-  ctx.rotate(pulsePhase * 0.08);
+  ctx.rotate(pulsePhase * 0.018);
   ctx.lineWidth = Math.max(2, Math.min(width, height) / 240);
   ctx.shadowColor = colors[2];
   ctx.shadowBlur = 14;
@@ -598,7 +625,7 @@ function drawOrbit(width, height, values) {
     const value = Math.min(255, values[i] * gain);
     const normalized = Math.pow(value / 255, 1.08);
     const angle = (i / points) * Math.PI * 2;
-    const inner = baseRadius + Math.sin(pulsePhase + i * 0.15) * 5;
+    const inner = baseRadius + normalized * 4;
     const outer = inner + 8 + normalized * maxRadius;
 
     ctx.strokeStyle = getPaletteColor(colors, normalized);
@@ -633,7 +660,7 @@ function drawCircle(width, height, values) {
 
   ctx.save();
   ctx.translate(centerX, centerY);
-  ctx.rotate(pulsePhase * 0.045);
+  ctx.rotate(pulsePhase * 0.012);
   ctx.lineCap = "round";
   ctx.shadowColor = colors[1];
   ctx.shadowBlur = 16 + energy.average * 18;
@@ -694,7 +721,7 @@ function drawBloom(width, height, values) {
 
   ctx.save();
   ctx.translate(centerX, centerY);
-  ctx.rotate(Math.sin(pulsePhase * 0.4) * 0.08);
+  ctx.rotate((energy.mid - energy.high) * 0.05);
   ctx.shadowColor = colors[2];
   ctx.shadowBlur = 26;
 
@@ -703,7 +730,7 @@ function drawBloom(width, height, values) {
     for (let i = 0; i <= points; i += 1) {
       const index = i % points;
       const angle = (i / points) * Math.PI * 2;
-      const ripple = Math.sin(pulsePhase * (1.3 + layer * 0.12) + index * 0.5) * 10;
+      const ripple = Math.sin(index * 0.5 + layer) * energy.average * 8;
       const distance = radius + ripple + normalizedValues[index] * maxSpread * (1 - layer * 0.18);
       const x = Math.cos(angle) * distance;
       const y = Math.sin(angle) * distance;
@@ -741,14 +768,14 @@ function drawTunnel(width, height, values) {
 
   ctx.save();
   ctx.translate(centerX, centerY);
-  ctx.rotate(pulsePhase * 0.05);
+  ctx.rotate(pulsePhase * 0.012);
   ctx.lineWidth = Math.max(1.5, Math.min(width, height) / 320);
   ctx.shadowBlur = 12 + energy.high * 24;
   ctx.shadowColor = colors[1];
 
   for (let ring = 0; ring < rings; ring += 1) {
     const progress = ring / rings;
-    const radius = ((progress + (pulsePhase * 0.018) % 1) % 1) * maxRadius;
+    const radius = ((progress + (pulsePhase * 0.006) % 1) % 1) * maxRadius;
     const alpha = Math.max(0, 1 - radius / maxRadius);
     const samples = 96;
 
@@ -756,7 +783,7 @@ function drawTunnel(width, height, values) {
     for (let i = 0; i <= samples; i += 1) {
       const valueIndex = Math.floor((i / samples) * (normalizedValues.length - 1));
       const angle = (i / samples) * Math.PI * 2;
-      const wobble = normalizedValues[valueIndex] * 42 + Math.sin(pulsePhase + i * 0.24 + ring) * 8;
+      const wobble = normalizedValues[valueIndex] * 42;
       const distance = radius + wobble * alpha;
       const x = Math.cos(angle) * distance;
       const y = Math.sin(angle) * distance * (0.74 + energy.bass * 0.18);
@@ -779,7 +806,7 @@ function seedParticles(width, height, count) {
   particles = Array.from({ length: count }, (_, index) => ({
     angle: (index / count) * Math.PI * 2,
     radius: Math.min(width, height) * (0.12 + Math.random() * 0.36),
-    speed: 0.002 + Math.random() * 0.007,
+    speed: 0.001 + Math.random() * 0.002,
     band: index % Math.max(1, Number(barsControl.value)),
   }));
 }
@@ -802,10 +829,10 @@ function drawConstellation(width, height, values) {
 
   const points = particles.map((particle) => {
     const bandValue = normalizedValues[particle.band % normalizedValues.length] || 0;
-    particle.angle += particle.speed * (1 + energy.high * 2.2);
+    particle.angle += particle.speed * (0.4 + energy.high * 2.2);
     const radius = particle.radius * (0.72 + bandValue * 0.72);
     return {
-      x: centerX + Math.cos(particle.angle + pulsePhase * 0.04) * radius,
+      x: centerX + Math.cos(particle.angle) * radius,
       y: centerY + Math.sin(particle.angle * 1.24) * radius * 0.72,
       value: bandValue,
     };
@@ -899,11 +926,14 @@ function drawActiveVisualizer(width, height, values) {
   }
 }
 
-function render() {
+function render(now = performance.now()) {
   resizeCanvas();
   const { width, height } = canvas;
+  const deltaSeconds = Math.min(0.05, (now - lastRenderTime) / 1000);
+  lastRenderTime = now;
   drawBackground(width, height);
-  pulsePhase += 0.035;
+  pulsePhase += deltaSeconds * 60 * 0.018;
+  updatePerformanceReadout(now);
 
   if (nativeSpectrum) {
     drawActiveVisualizer(width, height, getNativeValues());
