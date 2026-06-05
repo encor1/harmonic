@@ -84,8 +84,8 @@ export class VisualizerRenderer {
       case "bloom":
         this.drawBloom(width, height, smoothedValues);
         break;
-      case "constellation":
-        this.drawConstellation(width, height, smoothedValues);
+      case "nodes":
+        this.drawNodes(width, height, smoothedValues);
         break;
       default:
         this.drawSpectrumBars(width, height, smoothedValues);
@@ -477,7 +477,7 @@ export class VisualizerRenderer {
     }));
   }
 
-  private drawConstellation(width: number, height: number, values: number[]): void {
+  private drawNodes(width: number, height: number, values: number[]): void {
     const colors = this.colors();
     const normalizedValues = this.getNormalizedValues(values, 1);
     const energy = this.getEnergy(values);
