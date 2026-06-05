@@ -11,7 +11,7 @@
     "dev": "tauri dev",
     "dev:x11": "GDK_BACKEND=x11 WEBKIT_DISABLE_DMABUF_RENDERER=1 tauri dev",
     "build": "tauri build",
-    "start": "./src-tauri/target/release/retro-spectrum-visualizer",
+    "start": "GDK_BACKEND=x11 WEBKIT_DISABLE_DMABUF_RENDERER=1 ./src-tauri/target/release/retro-spectrum-visualizer",
     "start:x11": "GDK_BACKEND=x11 WEBKIT_DISABLE_DMABUF_RENDERER=1 ./src-tauri/target/release/retro-spectrum-visualizer",
     "start:wayland": "GDK_BACKEND=wayland ./src-tauri/target/release/retro-spectrum-visualizer",
     "start:debug": "RUST_BACKTRACE=1 ./src-tauri/target/release/retro-spectrum-visualizer"
