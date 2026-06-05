@@ -42,6 +42,6 @@ Then open `http://localhost:8000/`.
 
 ## Use
 
-Start playback in Spotify, press **Capture Audio**, and the Tauri app will analyze the default Linux output device. Press **STOP** to end capture.
+Start playback in Spotify, then launch the Tauri app. It automatically analyzes the default Linux output device on startup.
 
 Browser pages cannot directly attach to the Spotify desktop process. They can only analyze audio the browser is allowed to capture through the screen/window/tab sharing prompt. If the prompt does not expose audio for the Spotify desktop app on your platform, use Spotify Web Player in a browser tab and share that tab with audio enabled.
