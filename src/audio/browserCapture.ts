@@ -2,7 +2,6 @@ export interface BrowserCapture {
   audioContext: AudioContext | null;
   analyser: AnalyserNode | null;
   frequencyData: Uint8Array<ArrayBuffer> | null;
-  timeData: Uint8Array<ArrayBuffer> | null;
   start(): Promise<MediaStream>;
   stop(): void;
   close(): void;
@@ -14,7 +13,6 @@ export function createBrowserCapture(onEnded: () => void): BrowserCapture {
   let source: MediaStreamAudioSourceNode | null = null;
   let captureStream: MediaStream | null = null;
   let frequencyData: Uint8Array<ArrayBuffer> | null = null;
-  let timeData: Uint8Array<ArrayBuffer> | null = null;
 
   function ensureAudioContext(): AudioContext {
     audioContext ??= new AudioContext();
@@ -64,7 +62,6 @@ export function createBrowserCapture(onEnded: () => void): BrowserCapture {
     analyser.fftSize = 2048;
     analyser.smoothingTimeConstant = 0.42;
     frequencyData = new Uint8Array(analyser.frequencyBinCount);
-    timeData = new Uint8Array(analyser.fftSize);
 
     disconnectSource();
     captureStream = stream;
@@ -83,7 +80,6 @@ export function createBrowserCapture(onEnded: () => void): BrowserCapture {
     stopCaptureTracks();
     analyser = null;
     frequencyData = null;
-    timeData = null;
   }
 
   function close(): void {
@@ -101,9 +97,6 @@ export function createBrowserCapture(onEnded: () => void): BrowserCapture {
     },
     get frequencyData() {
       return frequencyData;
-    },
-    get timeData() {
-      return timeData;
     },
     start,
     stop,

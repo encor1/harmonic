@@ -102,20 +102,6 @@ function frequencyToBin(audioContext: AudioContext, frequencyData: AudioByteArra
   return Math.max(0, Math.min(frequencyData.length - 1, index));
 }
 
-export function updateLevelReadout(analyser: AnalyserNode, timeData: AudioByteArray, levelReadout: HTMLOutputElement): void {
-  analyser.getByteTimeDomainData(timeData);
-  let sumSquares = 0;
-
-  for (let i = 0; i < timeData.length; i += 1) {
-    const centered = (timeData[i] - 128) / 128;
-    sumSquares += centered * centered;
-  }
-
-  const rms = Math.sqrt(sumSquares / timeData.length);
-  const percent = Math.min(99, Math.round(rms * 180));
-  levelReadout.textContent = `${String(percent).padStart(2, "0")}%`;
-}
-
 export function getAnalyzerValues(
   ui: UiElements,
   audioContext: AudioContext,

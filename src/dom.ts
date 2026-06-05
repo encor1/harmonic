@@ -13,10 +13,6 @@ function requireElement<T extends HTMLElement>(id: string, constructor: new () =
 export interface UiElements {
   canvas: HTMLCanvasElement;
   ctx: CanvasRenderingContext2D;
-  statusTextInline: HTMLElement;
-  levelReadout: HTMLOutputElement;
-  performanceReadout: HTMLOutputElement;
-  trackTitle: HTMLHeadingElement;
   gainControl: HTMLInputElement;
   gainValue: HTMLOutputElement;
   falloffControl: HTMLInputElement;
@@ -39,10 +35,6 @@ export function getUiElements(): UiElements {
   return {
     canvas,
     ctx,
-    statusTextInline: requireElement("statusTextInline", HTMLElement),
-    levelReadout: requireElement("levelReadout", HTMLOutputElement),
-    performanceReadout: requireElement("performanceReadout", HTMLOutputElement),
-    trackTitle: requireElement("trackTitle", HTMLHeadingElement),
     gainControl: requireElement("gain", HTMLInputElement),
     gainValue: requireElement("gainValue", HTMLOutputElement),
     falloffControl: requireElement("falloff", HTMLInputElement),
@@ -73,10 +65,6 @@ export function getMode(ui: UiElements): VisualizerMode {
 
 export function getPaletteName(ui: UiElements): PaletteName {
   return ui.paletteControl.value as PaletteName;
-}
-
-export function setStatus(ui: UiElements, message: string): void {
-  ui.statusTextInline.textContent = message;
 }
 
 export function syncControlReadouts(ui: UiElements): void {
