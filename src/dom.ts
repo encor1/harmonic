@@ -1,4 +1,5 @@
 import type { PaletteName, VisualizerMode } from "./types";
+import { palettes } from "./palettes";
 
 function requireElement<T extends HTMLElement>(id: string, constructor: new () => T): T {
   const element = document.getElementById(id);
@@ -22,6 +23,7 @@ export interface UiElements {
   modeControl: HTMLSelectElement;
   modeButtons: HTMLButtonElement[];
   paletteControl: HTMLSelectElement;
+  palettePreview: HTMLElement | null;
 }
 
 export function getUiElements(): UiElements {
@@ -44,6 +46,7 @@ export function getUiElements(): UiElements {
     modeControl: requireElement("mode", HTMLSelectElement),
     modeButtons: Array.from(document.querySelectorAll<HTMLButtonElement>("[data-mode]")),
     paletteControl: requireElement("palette", HTMLSelectElement),
+    palettePreview: document.querySelector<HTMLElement>(".palette-preview"),
   };
 }
 
@@ -82,6 +85,11 @@ export function syncModeControls(ui: UiElements): void {
     button.classList.toggle("is-active", isActive);
     button.setAttribute("aria-pressed", String(isActive));
   });
+}
+
+export function syncPalettePreview(ui: UiElements): void {
+  const colors = palettes[getPaletteName(ui)] || palettes.classic;
+  ui.palettePreview?.style.setProperty("--palette-preview", colors.join(", "));
 }
 
 function syncRangeFill(input: HTMLInputElement): void {

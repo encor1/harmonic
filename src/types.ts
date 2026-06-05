@@ -1,4 +1,11 @@
-export type PaletteName = "classic" | "fire" | "ice" | "mono";
+export type PaletteName =
+  | "classic"
+  | "fire"
+  | "ice"
+  | "terminal"
+  | "aurora"
+  | "ultraviolet"
+  | "signal";
 
 export type VisualizerMode =
   | "bars"

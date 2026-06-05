@@ -127,17 +127,9 @@ export class VisualizerRenderer {
 
   private drawBackground(width: number, height: number): void {
     const gradient = this.ctx.createLinearGradient(0, 0, 0, height);
-    gradient.addColorStop(0, "#101112");
-    gradient.addColorStop(0.48, "#08090a");
-    gradient.addColorStop(1, "#0e0e0f");
+    gradient.addColorStop(0, "#111315");
+    gradient.addColorStop(1, "#0b0c0d");
     this.ctx.fillStyle = gradient;
-    this.ctx.fillRect(0, 0, width, height);
-
-    const glow = this.ctx.createRadialGradient(width * 0.68, height * 0.38, 0, width * 0.68, height * 0.38, width * 0.42);
-    glow.addColorStop(0, "rgba(0, 245, 255, 0.12)");
-    glow.addColorStop(0.44, "rgba(0, 245, 255, 0.04)");
-    glow.addColorStop(1, "rgba(0, 245, 255, 0)");
-    this.ctx.fillStyle = glow;
     this.ctx.fillRect(0, 0, width, height);
   }
 

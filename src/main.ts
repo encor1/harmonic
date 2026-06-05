@@ -1,6 +1,6 @@
 import { createBrowserCapture } from "./audio/browserCapture";
 import { createNativeCapture, isTauriRuntime } from "./audio/tauriCapture";
-import { getUiElements, syncControlReadouts, syncModeControls } from "./dom";
+import { getUiElements, syncControlReadouts, syncModeControls, syncPalettePreview } from "./dom";
 import { getAnalyzerValues, getNativeValues } from "./spectrum";
 import { VisualizerRenderer } from "./visualizer/renderer";
 
@@ -76,7 +76,10 @@ ui.modeButtons.forEach((button) => {
     }
   });
 });
-ui.paletteControl.addEventListener("change", () => renderer.resetModeState());
+ui.paletteControl.addEventListener("change", () => {
+  syncPalettePreview(ui);
+  renderer.resetModeState();
+});
 window.addEventListener("resize", () => renderer.resizeCanvas());
 window.addEventListener("beforeunload", () => {
   cancelAnimationFrame(animationFrame);
@@ -87,5 +90,6 @@ window.addEventListener("beforeunload", () => {
 resetToIdle();
 syncControlReadouts(ui);
 syncModeControls(ui);
+syncPalettePreview(ui);
 render();
 void startCapture();
