@@ -11,7 +11,7 @@ const viteBin =
 async function isDevServerAvailable() {
   try {
     const response = await fetch(url, { method: "HEAD" });
-    return response.ok || response.status < 500;
+    return response.ok;
   } catch {
     return false;
   }
@@ -24,7 +24,7 @@ if (await isDevServerAvailable()) {
 
 const vite = spawn(
   viteBin,
-  ["vite", "--host", host, "--port", String(port)],
+  ["--host", host, "--port", String(port), "--strictPort"],
   {
     stdio: "inherit",
     env: process.env,

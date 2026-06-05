@@ -14,9 +14,7 @@ export type VisualizerMode =
   | "wave"
   | "orbit"
   | "bloom"
-  | "tunnel"
-  | "constellation"
-  | "spectrogram";
+  | "constellation";
 
 export interface NativeSpectrum {
   bands: number[];

@@ -23,18 +23,8 @@ export class VisualizerRenderer {
   private particles: Particle[] = [];
   private lastRenderTime = performance.now();
   private frameDeltaSeconds = 1 / 60;
-  private readonly spectrogramCanvas = document.createElement("canvas");
-  private readonly spectrogramCtx: CanvasRenderingContext2D;
 
-  constructor(private readonly ui: UiElements) {
-    const spectrogramCtx = this.spectrogramCanvas.getContext("2d");
-
-    if (!spectrogramCtx) {
-      throw new Error("Spectrogram canvas context is unavailable");
-    }
-
-    this.spectrogramCtx = spectrogramCtx;
-  }
+  constructor(private readonly ui: UiElements) {}
 
   resizeCanvas(): void {
     const rect = this.ui.canvas.getBoundingClientRect();
@@ -52,8 +42,6 @@ export class VisualizerRenderer {
     this.peakData = [];
     this.smoothedValues = [];
     this.particles = [];
-    this.spectrogramCanvas.width = 0;
-    this.spectrogramCanvas.height = 0;
     this.modeSignature = "";
   }
 
@@ -96,14 +84,8 @@ export class VisualizerRenderer {
       case "bloom":
         this.drawBloom(width, height, smoothedValues);
         break;
-      case "tunnel":
-        this.drawTunnel(width, height, smoothedValues);
-        break;
       case "constellation":
         this.drawConstellation(width, height, smoothedValues);
-        break;
-      case "spectrogram":
-        this.drawSpectrogram(width, height, smoothedValues);
         break;
       default:
         this.drawSpectrumBars(width, height, smoothedValues);
@@ -126,8 +108,6 @@ export class VisualizerRenderer {
       this.peakData = [];
       this.smoothedValues = [];
       this.particles = [];
-      this.spectrogramCanvas.width = 0;
-      this.spectrogramCanvas.height = 0;
     }
   }
 
@@ -488,48 +468,6 @@ export class VisualizerRenderer {
     this.ctx.restore();
   }
 
-  private drawTunnel(width: number, height: number, values: number[]): void {
-    const colors = this.colors();
-    const normalizedValues = this.getNormalizedValues(values, 1.02);
-    const energy = this.getEnergy(values);
-    const centerX = width / 2;
-    const centerY = height / 2;
-    const maxRadius = Math.hypot(width, height) * 0.58;
-    const rings = 18;
-
-    this.ctx.save();
-    this.ctx.translate(centerX, centerY);
-    this.ctx.rotate(this.pulsePhase * 0.012);
-    this.ctx.lineWidth = Math.max(1.5, Math.min(width, height) / 320);
-    this.ctx.shadowBlur = 12 + energy.high * 24;
-    this.ctx.shadowColor = colors[1];
-
-    for (let ring = 0; ring < rings; ring += 1) {
-      const progress = ring / rings;
-      const radius = ((progress + (this.pulsePhase * 0.006) % 1) % 1) * maxRadius;
-      const alpha = Math.max(0, 1 - radius / maxRadius);
-      const samples = 96;
-
-      this.ctx.beginPath();
-      for (let i = 0; i <= samples; i += 1) {
-        const valueIndex = Math.floor((i / samples) * (normalizedValues.length - 1));
-        const angle = (i / samples) * Math.PI * 2;
-        const wobble = normalizedValues[valueIndex] * 42;
-        const distance = radius + wobble * alpha;
-        const x = Math.cos(angle) * distance;
-        const y = Math.sin(angle) * distance * (0.74 + energy.bass * 0.18);
-
-        if (i === 0) this.ctx.moveTo(x, y);
-        else this.ctx.lineTo(x, y);
-      }
-
-      this.ctx.strokeStyle = this.colorWithAlpha(this.getPaletteColor(colors, alpha), 0.12 + alpha * 0.72);
-      this.ctx.stroke();
-    }
-
-    this.ctx.restore();
-  }
-
   private seedParticles(width: number, height: number, count: number): void {
     this.particles = Array.from({ length: count }, (_, index) => ({
       angle: (index / count) * Math.PI * 2,
@@ -592,37 +530,6 @@ export class VisualizerRenderer {
       this.ctx.fill();
     });
 
-    this.ctx.restore();
-  }
-
-  private drawSpectrogram(width: number, height: number, values: number[]): void {
-    const ctx = this.spectrogramCtx;
-    const colors = this.colors();
-    const normalizedValues = this.getNormalizedValues(values, 1);
-    const stripWidth = Math.max(2, Math.floor(width / 360));
-
-    if (this.spectrogramCanvas.width !== width || this.spectrogramCanvas.height !== height) {
-      this.spectrogramCanvas.width = width;
-      this.spectrogramCanvas.height = height;
-      ctx.fillStyle = "#020302";
-      ctx.fillRect(0, 0, width, height);
-    }
-
-    ctx.drawImage(this.spectrogramCanvas, stripWidth, 0, width - stripWidth, height, 0, 0, width - stripWidth, height);
-    ctx.fillStyle = "rgba(2, 3, 2, 0.36)";
-    ctx.fillRect(width - stripWidth, 0, stripWidth, height);
-
-    for (let i = 0; i < normalizedValues.length; i += 1) {
-      const value = normalizedValues[i];
-      const y = height - (i / normalizedValues.length) * height;
-      const bandHeight = Math.ceil(height / normalizedValues.length) + 1;
-      ctx.fillStyle = this.colorWithAlpha(this.getPaletteColor(colors, value), 0.16 + value * 0.84);
-      ctx.fillRect(width - stripWidth, y - bandHeight, stripWidth, bandHeight);
-    }
-
-    this.ctx.save();
-    this.ctx.globalAlpha = 0.95;
-    this.ctx.drawImage(this.spectrogramCanvas, 0, 0);
     this.ctx.restore();
   }
 }
