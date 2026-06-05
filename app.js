@@ -341,24 +341,90 @@ function getEnergy(values) {
   };
 }
 
+function clamp(value, min, max) {
+  return Math.max(min, Math.min(max, value));
+}
+
+function averageValues(values, start, end) {
+  const safeStart = clamp(start, 0, values.length);
+  const safeEnd = clamp(end, safeStart, values.length);
+  let sum = 0;
+
+  for (let index = safeStart; index < safeEnd; index += 1) {
+    sum += values[index] || 0;
+  }
+
+  return sum / Math.max(1, safeEnd - safeStart);
+}
+
+function getInterpolatedGain(progress, gains) {
+  const scaled = progress * (gains.length - 1);
+  const low = Math.floor(scaled);
+  const high = Math.min(gains.length - 1, low + 1);
+  const mix = scaled - low;
+  return gains[low] * (1 - mix) + gains[high] * mix;
+}
+
+function softLimit(value) {
+  const knee = 132;
+
+  if (value <= knee) {
+    return value;
+  }
+
+  return knee + (205 - knee) * (1 - Math.exp((knee - value) / 120));
+}
+
+function balanceSpectrum(values) {
+  const length = values.length;
+
+  if (!length) {
+    return values;
+  }
+
+  const average = averageValues(values, 0, length);
+  const bandSize = Math.max(1, Math.floor(length / 4));
+  const rangeAverages = [
+    averageValues(values, 0, bandSize),
+    averageValues(values, bandSize, bandSize * 2),
+    averageValues(values, bandSize * 2, bandSize * 3),
+    averageValues(values, bandSize * 3, length),
+  ];
+  const target = Math.max(10, average * 0.58);
+  const gains = rangeAverages.map((rangeAverage, index) => {
+    const shelf = 0.72 + index * 0.12;
+    return clamp((target / Math.max(12, rangeAverage)) * shelf, 0.42, 1.65);
+  });
+
+  return values.map((value, index) => {
+    const progress = index / Math.max(1, length - 1);
+    const tilt = 0.74 + progress * 0.46;
+    const balanced = value * getInterpolatedGain(progress, gains) * tilt;
+    const localAverage = averageValues(values, Math.max(0, index - 2), Math.min(length, index + 3));
+    const transient = Math.max(0, value - localAverage) * 0.16;
+    return softLimit(balanced + transient);
+  });
+}
+
 function enhanceValues(values) {
   if (!values.length) {
     return values;
   }
 
-  const average = values.reduce((sum, value) => sum + value, 0) / values.length;
-  const peak = values.reduce((max, value) => Math.max(max, value), 0);
-  const floor = Math.min(58, average * 0.26 + peak * 0.1);
+  const balancedValues = balanceSpectrum(values);
+  const average = balancedValues.reduce((sum, value) => sum + value, 0) / balancedValues.length;
+  const peak = balancedValues.reduce((max, value) => Math.max(max, value), 0);
+  const floor = Math.min(24, average * 0.12 + peak * 0.035);
 
-  return values.map((value, index) => {
-    const left = values[Math.max(0, index - 1)] || 0;
-    const right = values[Math.min(values.length - 1, index + 1)] || 0;
-    const wideLeft = values[Math.max(0, index - 3)] || 0;
-    const wideRight = values[Math.min(values.length - 1, index + 3)] || 0;
-    const neighbor = Math.max(left, right) * 0.32;
-    const wide = Math.max(wideLeft, wideRight) * 0.14;
-    const movement = floor * (0.55 + Math.sin(pulsePhase + index * 0.37) * 0.22);
-    return Math.min(255, value + neighbor + wide + movement);
+  return balancedValues.map((value, index) => {
+    const left = balancedValues[Math.max(0, index - 1)] || 0;
+    const right = balancedValues[Math.min(balancedValues.length - 1, index + 1)] || 0;
+    const wideLeft = balancedValues[Math.max(0, index - 3)] || 0;
+    const wideRight = balancedValues[Math.min(balancedValues.length - 1, index + 3)] || 0;
+    const neighbor = Math.max(left, right) * 0.16;
+    const wide = Math.max(wideLeft, wideRight) * 0.05;
+    const movement = floor * (0.45 + Math.sin(pulsePhase + index * 0.37) * 0.18);
+    return softLimit(value + neighbor + wide + movement);
   });
 }
 

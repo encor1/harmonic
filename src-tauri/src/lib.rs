@@ -125,7 +125,7 @@ fn read_audio_stream<R: Read>(mut stream: R, app: AppHandle, running: Arc<Atomic
 }
 
 fn analyze_samples(samples: &[i16]) -> SpectrumPayload {
-    let mut bands = Vec::with_capacity(BAND_COUNT);
+    let mut magnitudes = Vec::with_capacity(BAND_COUNT);
     let mut sum_squares = 0.0_f32;
 
     for &sample in samples {
@@ -136,14 +136,39 @@ fn analyze_samples(samples: &[i16]) -> SpectrumPayload {
     let rms = (sum_squares / samples.len() as f32).sqrt();
     let level = (rms * 180.0).clamp(0.0, 99.0).round() as u8;
 
+    if rms < 0.003 {
+        return SpectrumPayload {
+            bands: vec![0; BAND_COUNT],
+            level,
+        };
+    }
+
     for band in 0..BAND_COUNT {
         let progress = band as f32 / (BAND_COUNT - 1) as f32;
         let frequency = 40.0_f32 * (16_000.0_f32 / 40.0_f32).powf(progress);
         let magnitude = goertzel_magnitude(samples, frequency);
-        bands.push((magnitude * 680.0).clamp(0.0, 255.0).round() as u8);
+        magnitudes.push(magnitude);
     }
 
-    SpectrumPayload { bands, level }
+    SpectrumPayload {
+        bands: shape_spectrum(&magnitudes),
+        level,
+    }
+}
+
+fn shape_spectrum(magnitudes: &[f32]) -> Vec<u8> {
+    magnitudes
+        .iter()
+        .enumerate()
+        .map(|(band, &magnitude)| {
+            let progress = band as f32 / (magnitudes.len() - 1) as f32;
+            let presence_lift = 1.0 + progress * 2.2;
+            let weighted = (magnitude * presence_lift).max(0.000_001);
+            let db = 20.0 * weighted.log10();
+            let normalized = ((db + 76.0) / 64.0).clamp(0.0, 1.0);
+            (normalized.powf(1.55) * 190.0).round() as u8
+        })
+        .collect()
 }
 
 fn goertzel_magnitude(samples: &[i16], frequency: f32) -> f32 {
