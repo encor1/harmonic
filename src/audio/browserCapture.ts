@@ -60,7 +60,7 @@ export function createBrowserCapture(onEnded: () => void): BrowserCapture {
 
     analyser = context.createAnalyser();
     analyser.fftSize = 2048;
-    analyser.smoothingTimeConstant = 0.42;
+    analyser.smoothingTimeConstant = 0.68;
     frequencyData = new Uint8Array(analyser.frequencyBinCount);
 
     disconnectSource();

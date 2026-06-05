@@ -17,10 +17,12 @@ interface Particle {
 
 export class VisualizerRenderer {
   private peakData: number[] = [];
+  private smoothedValues: number[] = [];
   private pulsePhase = 0;
   private modeSignature = "";
   private particles: Particle[] = [];
   private lastRenderTime = performance.now();
+  private frameDeltaSeconds = 1 / 60;
   private readonly spectrogramCanvas = document.createElement("canvas");
   private readonly spectrogramCtx: CanvasRenderingContext2D;
 
@@ -48,6 +50,7 @@ export class VisualizerRenderer {
 
   resetModeState(): void {
     this.peakData = [];
+    this.smoothedValues = [];
     this.particles = [];
     this.spectrogramCanvas.width = 0;
     this.spectrogramCanvas.height = 0;
@@ -58,6 +61,7 @@ export class VisualizerRenderer {
     this.resizeCanvas();
     const deltaSeconds = Math.min(0.05, (now - this.lastRenderTime) / 1000);
     this.lastRenderTime = now;
+    this.frameDeltaSeconds = deltaSeconds || 1 / 60;
     this.pulsePhase += deltaSeconds * 60 * 0.018;
     this.drawBackground(this.ui.canvas.width, this.ui.canvas.height);
   }
@@ -69,39 +73,40 @@ export class VisualizerRenderer {
   drawActive(values: number[]): void {
     const { width, height } = this.ui.canvas;
     this.syncModeState(width, height, getMode(this.ui), values.length);
+    const smoothedValues = this.smoothValues(values);
 
-    if (!values.length) {
+    if (!smoothedValues.length) {
       this.drawIdleBars(width, height);
       return;
     }
 
     switch (getMode(this.ui)) {
       case "mirror":
-        this.drawMirror(width, height, values);
+        this.drawMirror(width, height, smoothedValues);
         break;
       case "wave":
-        this.drawWave(width, height, values);
+        this.drawWave(width, height, smoothedValues);
         break;
       case "circle":
-        this.drawCircle(width, height, values);
+        this.drawCircle(width, height, smoothedValues);
         break;
       case "orbit":
-        this.drawOrbit(width, height, values);
+        this.drawOrbit(width, height, smoothedValues);
         break;
       case "bloom":
-        this.drawBloom(width, height, values);
+        this.drawBloom(width, height, smoothedValues);
         break;
       case "tunnel":
-        this.drawTunnel(width, height, values);
+        this.drawTunnel(width, height, smoothedValues);
         break;
       case "constellation":
-        this.drawConstellation(width, height, values);
+        this.drawConstellation(width, height, smoothedValues);
         break;
       case "spectrogram":
-        this.drawSpectrogram(width, height, values);
+        this.drawSpectrogram(width, height, smoothedValues);
         break;
       default:
-        this.drawSpectrumBars(width, height, values);
+        this.drawSpectrumBars(width, height, smoothedValues);
     }
   }
 
@@ -119,10 +124,36 @@ export class VisualizerRenderer {
     if (this.modeSignature !== signature) {
       this.modeSignature = signature;
       this.peakData = [];
+      this.smoothedValues = [];
       this.particles = [];
       this.spectrogramCanvas.width = 0;
       this.spectrogramCanvas.height = 0;
     }
+  }
+
+  private smoothValues(values: number[]): number[] {
+    if (!values.length) {
+      this.smoothedValues = [];
+      return [];
+    }
+
+    if (this.smoothedValues.length !== values.length) {
+      this.smoothedValues = [...values];
+      return this.smoothedValues;
+    }
+
+    const falloffProgress = (getFalloff(this.ui) - 0.72) / (0.96 - 0.72);
+    const attackSeconds = 0.055;
+    const releaseSeconds = 0.08 + Math.max(0, Math.min(1, falloffProgress)) * 0.22;
+
+    this.smoothedValues = values.map((value, index) => {
+      const previous = this.smoothedValues[index] || 0;
+      const timeConstant = value > previous ? attackSeconds : releaseSeconds;
+      const mix = 1 - Math.exp(-this.frameDeltaSeconds / timeConstant);
+      return previous + (value - previous) * mix;
+    });
+
+    return this.smoothedValues;
   }
 
   private drawBackground(width: number, height: number): void {
