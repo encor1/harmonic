@@ -88,7 +88,7 @@ canvas {
   position: relative;
   z-index: 3;
   display: grid;
-  grid-template-columns: repeat(5, minmax(150px, 1fr));
+  grid-template-columns: repeat(6, minmax(132px, 1fr));
   gap: 12px;
   width: min(1520px, calc(100% - 64px));
   margin: 0 auto 20px;
@@ -97,10 +97,10 @@ canvas {
 .control-card {
   min-width: 0;
   display: grid;
-  grid-template-rows: auto 30px auto;
-  gap: 8px;
-  min-height: 108px;
-  padding: 16px 18px;
+  grid-template-rows: auto minmax(30px, auto);
+  gap: 10px;
+  min-height: 78px;
+  padding: 12px 14px;
   border: 1px solid rgb(255 255 255 / 8%);
   border-radius: 8px;
   background: rgb(22 23 24 / 92%);
@@ -109,17 +109,29 @@ canvas {
   color: var(--muted);
 }
 
+.control-header {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
 .control-title {
+  min-width: 0;
   color: var(--text);
   font-size: 14px;
   line-height: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .control-value {
-  align-self: end;
   color: var(--text);
   font-size: 13px;
   line-height: 1;
+  white-space: nowrap;
 }
 
 input:disabled {
@@ -190,16 +202,87 @@ select {
     rgb(14 14 15 / 84%);
 }
 
+.select-label {
+  position: relative;
+  overflow: visible;
+}
+
+.select-label.is-customized > select {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  border: 0;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.select-trigger {
+  width: 100%;
+  min-height: 38px;
+  padding: 0 42px 0 12px;
+  border: 1px solid rgb(255 255 255 / 8%);
+  border-radius: 2px;
+  color: var(--text);
+  text-align: left;
+  background:
+    linear-gradient(45deg, transparent 50%, var(--muted) 50%) right 20px center / 7px 7px no-repeat,
+    linear-gradient(135deg, var(--muted) 50%, transparent 50%) right 15px center / 7px 7px no-repeat,
+    rgb(14 14 15 / 84%);
+  cursor: pointer;
+}
+
+.select-menu {
+  position: absolute;
+  right: 14px;
+  bottom: calc(100% + 8px);
+  left: 14px;
+  z-index: 10;
+  display: none;
+  max-height: min(320px, calc(100vh - 140px));
+  padding: 6px;
+  overflow-y: auto;
+  border: 1px solid rgb(255 255 255 / 12%);
+  border-radius: 4px;
+  background: rgb(14 14 15 / 96%);
+  box-shadow: 0 18px 48px rgb(0 0 0 / 46%);
+  backdrop-filter: blur(12px);
+}
+
+.select-label.is-open .select-menu {
+  display: grid;
+  gap: 2px;
+}
+
+.select-option {
+  min-height: 34px;
+  padding: 0 10px;
+  border: 0;
+  border-radius: 2px;
+  color: var(--muted);
+  text-align: left;
+  background: transparent;
+  cursor: pointer;
+}
+
+.select-option:hover,
+.select-option:focus-visible,
+.select-option.is-selected {
+  color: var(--text);
+  background: rgb(255 255 255 / 9%);
+}
+
 select:focus,
+.select-trigger:focus-visible,
 input[type="range"]:focus-visible {
   outline: 1px solid var(--cyan);
   outline-offset: 4px;
 }
 
 .palette-preview {
-  align-self: end;
-  width: 100%;
+  width: min(72px, 45%);
   height: 6px;
+  flex: 0 1 72px;
   border-radius: 999px;
   background: linear-gradient(90deg, var(--palette-preview, var(--lime), var(--cyan), #d8e5e5, #ffb4ab));
   box-shadow: none;
@@ -251,8 +334,8 @@ input[type="range"]:focus-visible {
   }
 
   .control-card {
-    grid-template-rows: auto 28px auto;
-    min-height: 100px;
+    grid-template-rows: auto minmax(28px, auto);
+    min-height: 72px;
     padding: 14px 16px;
   }
 

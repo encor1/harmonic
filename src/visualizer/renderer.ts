@@ -1,4 +1,4 @@
-import { getBars, getFalloff, getGain, getMode, getPaletteName, type UiElements } from "../dom";
+import { getBars, getGain, getMode, getPaletteName, getPeakFalloff, getRelease, type UiElements } from "../dom";
 import { palettes } from "../palettes";
 
 interface Energy {
@@ -122,7 +122,7 @@ export class VisualizerRenderer {
       return this.smoothedValues;
     }
 
-    const falloffProgress = (getFalloff(this.ui) - 0.72) / (0.96 - 0.72);
+    const falloffProgress = (getRelease(this.ui) - 0.72) / (0.96 - 0.72);
     const attackSeconds = 0.055;
     const releaseSeconds = 0.08 + Math.max(0, Math.min(1, falloffProgress)) * 0.22;
 
@@ -213,7 +213,7 @@ export class VisualizerRenderer {
     const colors = this.colors();
     const bars = values.length;
     const gain = getGain(this.ui);
-    const falloff = getFalloff(this.ui);
+    const falloff = getPeakFalloff(this.ui);
     const gap = Math.max(2, Math.floor(width / 260));
     const barWidth = Math.max(3, (width - gap * (bars - 1)) / bars);
     const maxHeight = height - 44;
@@ -253,7 +253,7 @@ export class VisualizerRenderer {
   private drawMirror(width: number, height: number, values: number[]): void {
     const colors = this.colors();
     const gain = getGain(this.ui);
-    const falloff = getFalloff(this.ui);
+    const falloff = getPeakFalloff(this.ui);
     const bars = values.length;
     const gap = Math.max(2, Math.floor(width / 300));
     const barWidth = Math.max(3, (width - gap * (bars - 1)) / bars);
@@ -358,7 +358,7 @@ export class VisualizerRenderer {
 
   private drawCircle(width: number, height: number, values: number[]): void {
     const colors = this.colors();
-    const falloff = getFalloff(this.ui);
+    const falloff = getPeakFalloff(this.ui);
     const normalizedValues = this.getNormalizedValues(values, 1.08);
     const energy = this.getEnergy(values);
     const bands = normalizedValues.length;

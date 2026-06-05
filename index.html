@@ -15,22 +15,37 @@
 
         <div class="controls">
           <label class="control-card">
-            <span class="control-title">Gain</span>
+            <span class="control-header">
+              <span class="control-title">Gain</span>
+              <output id="gainValue" class="control-value" for="gain">1.45x</output>
+            </span>
             <input id="gain" type="range" min="0.6" max="2.6" value="1.45" step="0.05">
-            <output id="gainValue" class="control-value" for="gain">1.45x</output>
           </label>
           <label class="control-card">
-            <span class="control-title">Falloff</span>
-            <input id="falloff" type="range" min="0.72" max="0.96" value="0.86" step="0.01">
-            <output id="falloffValue" class="control-value" for="falloff">0.86</output>
+            <span class="control-header">
+              <span class="control-title">Release</span>
+              <output id="releaseValue" class="control-value" for="release">0.86</output>
+            </span>
+            <input id="release" type="range" min="0.72" max="0.96" value="0.86" step="0.01">
           </label>
           <label class="control-card">
-            <span class="control-title">Bands</span>
+            <span class="control-header">
+              <span class="control-title">Peak</span>
+              <output id="peakFalloffValue" class="control-value" for="peakFalloff">86.0</output>
+            </span>
+            <input id="peakFalloff" type="range" min="85" max="99.5" value="86" step="0.5">
+          </label>
+          <label class="control-card">
+            <span class="control-header">
+              <span class="control-title">Bands</span>
+              <output id="barsValue" class="control-value" for="bars">72</output>
+            </span>
             <input id="bars" type="range" min="32" max="128" value="72" step="4">
-            <output id="barsValue" class="control-value" for="bars">72</output>
           </label>
-          <label class="control-card select-label">
-            <span class="control-title">Mode</span>
+          <div class="control-card select-label">
+            <span class="control-header">
+              <span class="control-title">Mode</span>
+            </span>
             <select id="mode" aria-label="Visualization mode">
               <option value="bars">Bars</option>
               <option value="circle">Circle</option>
@@ -40,9 +55,12 @@
               <option value="bloom">Bloom</option>
               <option value="constellation">Constellation</option>
             </select>
-          </label>
-          <label class="control-card select-label">
-            <span class="control-title">Palette</span>
+          </div>
+          <div class="control-card select-label">
+            <span class="control-header">
+              <span class="control-title">Palette</span>
+              <span class="palette-preview" aria-hidden="true"></span>
+            </span>
             <select id="palette">
               <option value="classic">Classic</option>
               <option value="fire">Fire</option>
@@ -52,8 +70,7 @@
               <option value="ultraviolet">Ultraviolet</option>
               <option value="signal">Signal</option>
             </select>
-            <span class="palette-preview" aria-hidden="true"></span>
-          </label>
+          </div>
         </div>
       </section>
     </main>

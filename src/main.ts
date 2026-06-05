@@ -1,11 +1,12 @@
 import { createBrowserCapture } from "./audio/browserCapture";
 import { createNativeCapture, isTauriRuntime } from "./audio/tauriCapture";
-import { getUiElements, syncControlReadouts, syncModeControls, syncPalettePreview } from "./dom";
+import { getUiElements, setupUpwardSelects, syncControlReadouts, syncModeControls, syncPalettePreview } from "./dom";
 import { getAnalyzerValues, getNativeValues } from "./spectrum";
 import { VisualizerRenderer } from "./visualizer/renderer";
 
 const ui = getUiElements();
 const renderer = new VisualizerRenderer(ui);
+setupUpwardSelects([ui.modeControl, ui.paletteControl]);
 
 const browserCapture = createBrowserCapture(() => resetToIdle());
 const nativeCapture = createNativeCapture(() => undefined);
@@ -63,7 +64,8 @@ ui.modeControl.addEventListener("change", () => {
   renderer.resetModeState();
 });
 ui.gainControl.addEventListener("input", () => syncControlReadouts(ui));
-ui.falloffControl.addEventListener("input", () => syncControlReadouts(ui));
+ui.releaseControl.addEventListener("input", () => syncControlReadouts(ui));
+ui.peakFalloffControl.addEventListener("input", () => syncControlReadouts(ui));
 ui.barsControl.addEventListener("input", () => {
   syncControlReadouts(ui);
   renderer.resetModeState();
