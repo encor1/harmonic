@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Retro Spectrum Visualizer</title>
+    <link rel="stylesheet" href="styles.css">
+  </head>
+  <body>
+    <main class="shell">
+      <section class="visualizer-panel" aria-label="Music visualizer">
+        <div class="chrome-bar">
+          <div class="window-actions" aria-hidden="true">
+            <span></span>
+            <span></span>
+            <span></span>
+          </div>
+          <div class="track-meta">
+            <p class="track-label">Retro Spectrum</p>
+            <h1 id="trackTitle">Spotify Audio</h1>
+          </div>
+          <output id="levelReadout" class="time-readout">IDLE</output>
+        </div>
+
+        <div class="screen">
+          <canvas id="visualizer" width="1280" height="640" aria-label="Audio visualizer"></canvas>
+          <div id="emptyState" class="empty-state">
+            <p id="statusText">Start Spotify, then capture the audio output.</p>
+            <button id="captureButton" class="primary-button" type="button">Capture Audio</button>
+          </div>
+        </div>
+
+        <div class="transport">
+          <button id="stopButton" class="square-button" type="button" aria-label="Stop capture" disabled>STOP</button>
+          <p id="statusTextInline" class="capture-note">Share a screen, window, or browser tab with audio enabled.</p>
+        </div>
+
+        <div class="controls">
+          <label>
+            <span>Gain</span>
+            <input id="gain" type="range" min="0.6" max="2.6" value="1.45" step="0.05">
+          </label>
+          <label>
+            <span>Falloff</span>
+            <input id="falloff" type="range" min="0.72" max="0.96" value="0.86" step="0.01">
+          </label>
+          <label>
+            <span>Bands</span>
+            <input id="bars" type="range" min="32" max="128" value="72" step="4">
+          </label>
+          <label class="select-label">
+            <span>Mode</span>
+            <select id="mode" aria-label="Visualization mode">
+              <option value="bars">Bars</option>
+              <option value="circle">Circle</option>
+              <option value="mirror">Mirror</option>
+              <option value="wave">Wave</option>
+              <option value="orbit">Orbit</option>
+              <option value="bloom">Bloom</option>
+              <option value="tunnel">Tunnel</option>
+              <option value="constellation">Constellation</option>
+              <option value="spectrogram">Spectrogram</option>
+            </select>
+          </label>
+          <label class="select-label">
+            <span>Palette</span>
+            <select id="palette">
+              <option value="classic">Classic</option>
+              <option value="fire">Fire</option>
+              <option value="ice">Ice</option>
+              <option value="mono">Terminal</option>
+            </select>
+          </label>
+        </div>
+      </section>
+    </main>
+
+    <script src="app.js"></script>
+  </body>
+</html>

@@ -1,0 +1,20 @@
+{
+  "name": "retro-spectrum-visualizer",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build:web": "mkdir -p dist && cp index.html app.js styles.css dist/",
+    "dev:web": "node scripts/dev-server.mjs",
+    "dev": "tauri dev",
+    "dev:x11": "GDK_BACKEND=x11 WEBKIT_DISABLE_DMABUF_RENDERER=1 tauri dev",
+    "build": "tauri build",
+    "start": "./src-tauri/target/release/retro-spectrum-visualizer",
+    "start:x11": "GDK_BACKEND=x11 WEBKIT_DISABLE_DMABUF_RENDERER=1 ./src-tauri/target/release/retro-spectrum-visualizer",
+    "start:wayland": "GDK_BACKEND=wayland ./src-tauri/target/release/retro-spectrum-visualizer",
+    "start:debug": "RUST_BACKTRACE=1 ./src-tauri/target/release/retro-spectrum-visualizer"
+  },
+  "devDependencies": {
+    "@tauri-apps/cli": "^2.0.0"
+  }
+}
