@@ -3,49 +3,48 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Retro Spectrum Visualizer</title>
+    <title>Spectrum Visualizer</title>
     <link rel="stylesheet" href="/src/styles.css">
   </head>
   <body>
-    <main class="shell">
-      <section class="visualizer-panel" aria-label="Music visualizer">
-        <div class="chrome-bar">
-          <div class="window-actions" aria-hidden="true">
-            <span></span>
-            <span></span>
-            <span></span>
-          </div>
-          <div class="track-meta">
-            <p class="track-label">Retro Spectrum</p>
-            <h1 id="trackTitle">Spotify Audio</h1>
-          </div>
-          <output id="levelReadout" class="time-readout">IDLE</output>
-        </div>
-
-        <div class="screen">
+    <main class="shell" aria-label="Audio visualizer">
+      <section class="visualizer-panel">
+        <div class="screen" aria-label="Visualization canvas">
           <canvas id="visualizer" width="1280" height="640" aria-label="Audio visualizer"></canvas>
         </div>
 
-        <div class="transport">
-          <p id="statusTextInline" class="capture-note">Starting audio capture.</p>
-          <output id="performanceReadout" class="performance-readout">VIS -- / AUD --</output>
+        <div class="status-layer" aria-label="Capture status">
+          <div class="source-block">
+            <p class="eyebrow">Spectrum</p>
+            <h1 id="trackTitle">Audio Input</h1>
+          </div>
+          <div class="status-stack">
+            <p id="statusTextInline" class="capture-note">Starting audio capture.</p>
+            <div class="readouts">
+              <output id="levelReadout" class="data-chip">IDLE</output>
+              <output id="performanceReadout" class="data-chip">VIS -- / AUD --</output>
+            </div>
+          </div>
         </div>
 
         <div class="controls">
-          <label>
-            <span>Gain</span>
+          <label class="control-card">
+            <span class="control-title">Gain</span>
             <input id="gain" type="range" min="0.6" max="2.6" value="1.45" step="0.05">
+            <output id="gainValue" class="control-value" for="gain">1.45x</output>
           </label>
-          <label>
-            <span>Falloff</span>
+          <label class="control-card">
+            <span class="control-title">Falloff</span>
             <input id="falloff" type="range" min="0.72" max="0.96" value="0.86" step="0.01">
+            <output id="falloffValue" class="control-value" for="falloff">0.86</output>
           </label>
-          <label>
-            <span>Bands</span>
+          <label class="control-card">
+            <span class="control-title">Bands</span>
             <input id="bars" type="range" min="32" max="128" value="72" step="4">
+            <output id="barsValue" class="control-value" for="bars">72</output>
           </label>
-          <label class="select-label">
-            <span>Mode</span>
+          <label class="control-card select-label">
+            <span class="control-title">Mode</span>
             <select id="mode" aria-label="Visualization mode">
               <option value="bars">Bars</option>
               <option value="circle">Circle</option>
@@ -58,14 +57,15 @@
               <option value="spectrogram">Spectrogram</option>
             </select>
           </label>
-          <label class="select-label">
-            <span>Palette</span>
+          <label class="control-card select-label">
+            <span class="control-title">Palette</span>
             <select id="palette">
               <option value="classic">Classic</option>
               <option value="fire">Fire</option>
               <option value="ice">Ice</option>
               <option value="mono">Terminal</option>
             </select>
+            <span class="palette-preview" aria-hidden="true"></span>
           </label>
         </div>
       </section>

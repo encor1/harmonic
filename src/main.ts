@@ -1,6 +1,6 @@
 import { createBrowserCapture } from "./audio/browserCapture";
 import { createNativeCapture, isTauriRuntime } from "./audio/tauriCapture";
-import { getUiElements, setStatus, syncModeControls } from "./dom";
+import { getUiElements, setStatus, syncControlReadouts, syncModeControls } from "./dom";
 import { PerformanceMeter } from "./metrics";
 import { getAnalyzerValues, getNativeValues, updateLevelReadout } from "./spectrum";
 import { VisualizerRenderer } from "./visualizer/renderer";
@@ -21,7 +21,7 @@ function resetToIdle(message = "Ready to capture audio."): void {
   browserCapture.stop();
   nativeCapture.clear();
   renderer.resetModeState();
-  ui.trackTitle.textContent = "Spotify Audio";
+  ui.trackTitle.textContent = "Audio Input";
   setStatus(ui, message);
   ui.levelReadout.textContent = "IDLE";
   ui.performanceReadout.textContent = "VIS -- / AUD --";
@@ -32,7 +32,7 @@ async function startNativeCapture(): Promise<void> {
 
   try {
     await nativeCapture.start();
-    ui.trackTitle.textContent = "Live Linux Audio";
+    ui.trackTitle.textContent = "System Audio";
     setStatus(ui, "Listening to the default output device.");
   } catch (error) {
     setStatus(ui, String(error));
@@ -44,7 +44,7 @@ async function startBrowserCapture(): Promise<void> {
 
   try {
     await browserCapture.start();
-    ui.trackTitle.textContent = "Live Spotify Audio";
+    ui.trackTitle.textContent = "Shared Audio";
     setStatus(ui, "Listening to shared audio.");
   } catch (error) {
     const message =
@@ -87,6 +87,12 @@ ui.modeControl.addEventListener("change", () => {
   syncModeControls(ui);
   renderer.resetModeState();
 });
+ui.gainControl.addEventListener("input", () => syncControlReadouts(ui));
+ui.falloffControl.addEventListener("input", () => syncControlReadouts(ui));
+ui.barsControl.addEventListener("input", () => {
+  syncControlReadouts(ui);
+  renderer.resetModeState();
+});
 ui.modeButtons.forEach((button) => {
   button.addEventListener("click", () => {
     if (button.dataset.mode) {
@@ -104,6 +110,7 @@ window.addEventListener("beforeunload", () => {
 });
 
 resetToIdle();
+syncControlReadouts(ui);
 syncModeControls(ui);
 render();
 void startCapture();

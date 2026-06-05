@@ -18,8 +18,11 @@ export interface UiElements {
   performanceReadout: HTMLOutputElement;
   trackTitle: HTMLHeadingElement;
   gainControl: HTMLInputElement;
+  gainValue: HTMLOutputElement;
   falloffControl: HTMLInputElement;
+  falloffValue: HTMLOutputElement;
   barsControl: HTMLInputElement;
+  barsValue: HTMLOutputElement;
   modeControl: HTMLSelectElement;
   modeButtons: HTMLButtonElement[];
   paletteControl: HTMLSelectElement;
@@ -41,8 +44,11 @@ export function getUiElements(): UiElements {
     performanceReadout: requireElement("performanceReadout", HTMLOutputElement),
     trackTitle: requireElement("trackTitle", HTMLHeadingElement),
     gainControl: requireElement("gain", HTMLInputElement),
+    gainValue: requireElement("gainValue", HTMLOutputElement),
     falloffControl: requireElement("falloff", HTMLInputElement),
+    falloffValue: requireElement("falloffValue", HTMLOutputElement),
     barsControl: requireElement("bars", HTMLInputElement),
+    barsValue: requireElement("barsValue", HTMLOutputElement),
     modeControl: requireElement("mode", HTMLSelectElement),
     modeButtons: Array.from(document.querySelectorAll<HTMLButtonElement>("[data-mode]")),
     paletteControl: requireElement("palette", HTMLSelectElement),
@@ -73,10 +79,27 @@ export function setStatus(ui: UiElements, message: string): void {
   ui.statusTextInline.textContent = message;
 }
 
+export function syncControlReadouts(ui: UiElements): void {
+  ui.gainValue.textContent = `${Number(ui.gainControl.value).toFixed(2)}x`;
+  ui.falloffValue.textContent = Number(ui.falloffControl.value).toFixed(2);
+  ui.barsValue.textContent = ui.barsControl.value;
+  syncRangeFill(ui.gainControl);
+  syncRangeFill(ui.falloffControl);
+  syncRangeFill(ui.barsControl);
+}
+
 export function syncModeControls(ui: UiElements): void {
   ui.modeButtons.forEach((button) => {
     const isActive = button.dataset.mode === ui.modeControl.value;
     button.classList.toggle("is-active", isActive);
     button.setAttribute("aria-pressed", String(isActive));
   });
+}
+
+function syncRangeFill(input: HTMLInputElement): void {
+  const min = Number(input.min);
+  const max = Number(input.max);
+  const value = Number(input.value);
+  const progress = ((value - min) / (max - min)) * 100;
+  input.style.setProperty("--fill", `${Math.min(100, Math.max(0, progress))}%`);
 }

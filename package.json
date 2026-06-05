@@ -6,7 +6,8 @@
   "scripts": {
     "build:web": "vite build",
     "typecheck": "tsc --noEmit",
-    "dev:web": "vite --host 127.0.0.1 --port 1420",
+    "dev:web": "node scripts/ensure-vite-dev.mjs",
+    "dev:web:force": "vite --host 127.0.0.1 --port 1420",
     "dev": "tauri dev",
     "dev:x11": "GDK_BACKEND=x11 WEBKIT_DISABLE_DMABUF_RENDERER=1 tauri dev",
     "build": "tauri build",

@@ -127,36 +127,42 @@ export class VisualizerRenderer {
 
   private drawBackground(width: number, height: number): void {
     const gradient = this.ctx.createLinearGradient(0, 0, 0, height);
-    gradient.addColorStop(0, "#050805");
-    gradient.addColorStop(0.52, "#000");
-    gradient.addColorStop(1, "#060906");
+    gradient.addColorStop(0, "#101112");
+    gradient.addColorStop(0.48, "#08090a");
+    gradient.addColorStop(1, "#0e0e0f");
     this.ctx.fillStyle = gradient;
     this.ctx.fillRect(0, 0, width, height);
 
-    this.ctx.strokeStyle = "rgba(120, 255, 90, 0.08)";
-    this.ctx.lineWidth = 1;
-    const rows = 10;
-    for (let i = 1; i < rows; i += 1) {
-      const y = (height / rows) * i;
-      this.ctx.beginPath();
-      this.ctx.moveTo(0, y);
-      this.ctx.lineTo(width, y);
-      this.ctx.stroke();
-    }
+    const glow = this.ctx.createRadialGradient(width * 0.68, height * 0.38, 0, width * 0.68, height * 0.38, width * 0.42);
+    glow.addColorStop(0, "rgba(0, 245, 255, 0.12)");
+    glow.addColorStop(0.44, "rgba(0, 245, 255, 0.04)");
+    glow.addColorStop(1, "rgba(0, 245, 255, 0)");
+    this.ctx.fillStyle = glow;
+    this.ctx.fillRect(0, 0, width, height);
   }
 
   private drawIdleBars(width: number, height: number): void {
     const bars = getBars(this.ui);
-    const gap = Math.max(2, Math.floor(width / 260));
+    const colors = this.colors();
+    const gap = Math.max(4, Math.floor(width / 210));
     const barWidth = Math.max(3, Math.floor((width - gap * (bars - 1)) / bars));
-    const baseY = height - 26;
+    const baseY = height - 20;
+    const maxHeight = height * 0.72;
+    const now = Date.now() * 0.001;
 
     for (let i = 0; i < bars; i += 1) {
       const x = i * (barWidth + gap);
-      const wave = Math.sin(Date.now() * 0.0015 + i * 0.4) * 0.5 + 0.5;
-      const h = 8 + wave * 22;
-      this.ctx.fillStyle = "rgba(124, 255, 77, 0.18)";
-      this.ctx.fillRect(x, baseY - h, barWidth, h);
+      const wave = Math.sin(now * 1.4 + i * 0.31) * 0.5 + 0.5;
+      const offset = Math.sin(i * 1.73) * 0.5 + 0.5;
+      const h = 18 + (wave * 0.38 + offset * 0.62) * maxHeight;
+      const y = baseY - h;
+      const barGradient = this.ctx.createLinearGradient(0, y, 0, baseY);
+      barGradient.addColorStop(0, this.colorWithAlpha(colors[3], 0.58));
+      barGradient.addColorStop(0.42, this.colorWithAlpha(colors[1], 0.48));
+      barGradient.addColorStop(1, this.colorWithAlpha(colors[0], 0.55));
+
+      this.ctx.fillStyle = barGradient;
+      this.ctx.fillRect(x, y, barWidth, h);
     }
   }
 
@@ -228,8 +234,13 @@ export class VisualizerRenderer {
       barGradient.addColorStop(0.62, colors[1]);
       barGradient.addColorStop(1, colors[0]);
 
+      this.ctx.save();
+      this.ctx.globalCompositeOperation = "screen";
+      this.ctx.shadowColor = colors[1];
+      this.ctx.shadowBlur = 12;
       this.ctx.fillStyle = barGradient;
       this.ctx.fillRect(x, y, barWidth, barHeight);
+      this.ctx.restore();
 
       this.ctx.fillStyle = colors[3];
       this.ctx.fillRect(x, height - 28 - this.peakData[i], barWidth, 3);
