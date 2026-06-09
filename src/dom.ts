@@ -14,6 +14,8 @@ function requireElement<T extends HTMLElement>(id: string, constructor: new () =
 export interface UiElements {
   canvas: HTMLCanvasElement;
   ctx: CanvasRenderingContext2D;
+  shell: HTMLElement;
+  controlsPanel: HTMLElement;
   gainControl: HTMLInputElement;
   gainValue: HTMLOutputElement;
   releaseControl: HTMLInputElement;
@@ -39,6 +41,8 @@ export function getUiElements(): UiElements {
   return {
     canvas,
     ctx,
+    shell: requireElement("shell", HTMLElement),
+    controlsPanel: requireElement("controls", HTMLElement),
     gainControl: requireElement("gain", HTMLInputElement),
     gainValue: requireElement("gainValue", HTMLOutputElement),
     releaseControl: requireElement("release", HTMLInputElement),

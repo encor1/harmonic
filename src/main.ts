@@ -12,6 +12,37 @@ const browserCapture = createBrowserCapture(() => resetToIdle());
 const nativeCapture = createNativeCapture(() => undefined);
 
 let animationFrame = 0;
+let controlsHideTimer = 0;
+let controlsVisible = true;
+let controlsHovered = false;
+let controlsFocused = false;
+
+function syncControlsChrome(): void {
+  const inertControls = ui.controlsPanel as HTMLElement & { inert: boolean };
+
+  ui.shell.classList.toggle("controls-visible", controlsVisible);
+  ui.controlsPanel.setAttribute("aria-hidden", String(!controlsVisible));
+  inertControls.inert = !controlsVisible;
+}
+
+function scheduleControlsHide(): void {
+  window.clearTimeout(controlsHideTimer);
+
+  if (controlsHovered || controlsFocused) {
+    return;
+  }
+
+  controlsHideTimer = window.setTimeout(() => {
+    controlsVisible = false;
+    syncControlsChrome();
+  }, 2400);
+}
+
+function revealControlsTemporarily(): void {
+  controlsVisible = true;
+  syncControlsChrome();
+  scheduleControlsHide();
+}
 
 function resetToIdle(): void {
   browserCapture.stop();
@@ -82,9 +113,44 @@ ui.paletteControl.addEventListener("change", () => {
   syncPalettePreview(ui);
   renderer.resetModeState();
 });
+window.addEventListener("pointermove", revealControlsTemporarily);
+window.addEventListener("mousemove", revealControlsTemporarily);
+window.addEventListener("pointerdown", revealControlsTemporarily);
+ui.controlsPanel.addEventListener("pointerenter", () => {
+  controlsHovered = true;
+  controlsVisible = true;
+  syncControlsChrome();
+  window.clearTimeout(controlsHideTimer);
+});
+ui.controlsPanel.addEventListener("pointerleave", () => {
+  controlsHovered = false;
+  scheduleControlsHide();
+});
+ui.controlsPanel.addEventListener("focusin", () => {
+  controlsFocused = true;
+  controlsVisible = true;
+  syncControlsChrome();
+  window.clearTimeout(controlsHideTimer);
+});
+ui.controlsPanel.addEventListener("focusout", () => {
+  controlsFocused = false;
+  scheduleControlsHide();
+});
+window.addEventListener("keydown", (event) => {
+  if (event.key !== "Escape") {
+    return;
+  }
+
+  controlsVisible = false;
+  controlsHovered = false;
+  controlsFocused = false;
+  window.clearTimeout(controlsHideTimer);
+  syncControlsChrome();
+});
 window.addEventListener("resize", () => renderer.resizeCanvas());
 window.addEventListener("beforeunload", () => {
   cancelAnimationFrame(animationFrame);
+  window.clearTimeout(controlsHideTimer);
   browserCapture.close();
   void nativeCapture.stop();
 });
@@ -93,5 +159,7 @@ resetToIdle();
 syncControlReadouts(ui);
 syncModeControls(ui);
 syncPalettePreview(ui);
+syncControlsChrome();
+scheduleControlsHide();
 render();
 void startCapture();

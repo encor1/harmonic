@@ -7,13 +7,13 @@
     <link rel="stylesheet" href="/src/styles.css">
   </head>
   <body>
-    <main class="shell" aria-label="Audio visualizer">
+    <main id="shell" class="shell" aria-label="Audio visualizer">
       <section class="visualizer-panel">
         <div class="screen" aria-label="Visualization canvas">
           <canvas id="visualizer" width="1280" height="640" aria-label="Audio visualizer"></canvas>
         </div>
 
-        <div class="controls">
+        <div id="controls" class="controls" aria-label="Visualizer controls">
           <label class="control-card">
             <span class="control-header">
               <span class="control-title">Gain</span>
