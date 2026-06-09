@@ -16,9 +16,7 @@
         "label": "main",
         "title": "Spectrum",
         "width": 1180,
-        "height": 820,
-        "minWidth": 720,
-        "minHeight": 560
+        "height": 820
       }
     ],
     "security": {
