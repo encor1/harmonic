@@ -1,6 +1,4 @@
-# Retro Spectrum Visualizer
-
-A classic Winamp-style spectrum visualizer for live Spotify or system audio.
+# Spectrum
 
 ## Run
 
@@ -8,16 +6,16 @@ A classic Winamp-style spectrum visualizer for live Spotify or system audio.
 
 ```sh
 npm install
-npm run dev:x11
+npm run dev
 ```
 
-Use `npm run dev:x11` on CachyOS or other systems where WebKit needs the X11/DMABUF workaround. It runs Tauri in dev mode against a localhost frontend server, so changes to `index.html`, `styles.css`, and `app.js` reload the app window automatically.
+Use `npm run dev`. It runs Tauri in dev mode against a localhost frontend server, so changes to `index.html`, `styles.css`, and `app.js` reload the app window automatically.
 
 For a production-style run, rebuild first and then start the release binary:
 
 ```sh
 npm run build
-npm run start:x11
+npm run start
 ```
 
 The Tauri build is currently Linux-only for native system audio capture. It starts `parec` against `@DEFAULT_MONITOR@`, so it works with PulseAudio or PipeWire through `pipewire-pulse`.

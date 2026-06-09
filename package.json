@@ -1,5 +1,5 @@
 {
-  "name": "retro-spectrum-visualizer",
+  "name": "spectrum",
   "version": "0.1.0",
   "private": true,
   "type": "module",
@@ -9,12 +9,9 @@
     "dev:web": "node scripts/ensure-vite-dev.mjs",
     "dev:web:force": "vite --host 127.0.0.1 --port 1420",
     "dev": "tauri dev",
-    "dev:x11": "GDK_BACKEND=x11 WEBKIT_DISABLE_DMABUF_RENDERER=1 tauri dev",
     "build": "tauri build",
-    "start": "GDK_BACKEND=x11 WEBKIT_DISABLE_DMABUF_RENDERER=1 ./src-tauri/target/release/retro-spectrum-visualizer",
-    "start:x11": "GDK_BACKEND=x11 WEBKIT_DISABLE_DMABUF_RENDERER=1 ./src-tauri/target/release/retro-spectrum-visualizer",
-    "start:wayland": "GDK_BACKEND=wayland ./src-tauri/target/release/retro-spectrum-visualizer",
-    "start:debug": "RUST_BACKTRACE=1 ./src-tauri/target/release/retro-spectrum-visualizer"
+    "start": "./src-tauri/target/release/spectrum",
+    "start:debug": "RUST_BACKTRACE=1 ./src-tauri/target/release/spectrum"
   },
   "devDependencies": {
     "@tauri-apps/cli": "^2.0.0",

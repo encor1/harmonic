@@ -2438,15 +2438,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "retro-spectrum-visualizer"
-version = "0.1.0"
-dependencies = [
- "serde",
- "tauri",
- "tauri-build",
-]
-
-[[package]]
 name = "rustc-hash"
 version = "2.1.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2817,6 +2808,15 @@ dependencies = [
  "gobject-sys",
  "libc",
  "system-deps",
+]
+
+[[package]]
+name = "spectrum"
+version = "0.1.0"
+dependencies = [
+ "serde",
+ "tauri",
+ "tauri-build",
 ]
 
 [[package]]

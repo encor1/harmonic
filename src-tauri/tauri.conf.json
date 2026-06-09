@@ -1,8 +1,8 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
-  "productName": "Retro Spectrum Visualizer",
+  "productName": "Spectrum",
   "version": "0.1.0",
-  "identifier": "dev.local.retro-spectrum-visualizer",
+  "identifier": "dev.local.spectrum",
   "build": {
     "devUrl": "http://127.0.0.1:1420",
     "beforeDevCommand": "npm run dev:web",
@@ -14,7 +14,7 @@
     "windows": [
       {
         "label": "main",
-        "title": "Retro Spectrum Visualizer",
+        "title": "Spectrum",
         "width": 1180,
         "height": 820,
         "minWidth": 720,
@@ -27,6 +27,16 @@
     }
   },
   "bundle": {
-    "active": false
+    "active": true,
+    "targets": ["appimage"],
+      "icon": [
+    "icons/icon.png",
+    "icons/32x32.png",
+    "icons/64x64.png",
+    "icons/128x128.png",
+    "icons/128x128@2x.png",
+    "icons/icon.icns",
+    "icons/icon.ico"
+  ]
   }
 }
