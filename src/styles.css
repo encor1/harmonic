@@ -87,7 +87,7 @@ canvas {
 .controls {
   position: absolute;
   right: 32px;
-  bottom: 20px;
+  top: 20px;
   left: 32px;
   z-index: 3;
   display: grid;
@@ -98,7 +98,7 @@ canvas {
   margin: 0 auto;
   opacity: 0;
   pointer-events: none;
-  transform: translateY(18px);
+  transform: translateY(-18px);
   transition:
     opacity 180ms ease,
     transform 180ms ease;
@@ -113,10 +113,10 @@ canvas {
 .controls::before {
   content: "";
   position: absolute;
-  inset: -26px -96px -20px -32px;
+  inset: -20px -32px -26px;
   z-index: -1;
   pointer-events: none;
-  background: linear-gradient(0deg, rgb(15 16 17 / 82%) 0%, rgb(15 16 17 / 42%) 52%, transparent 100%);
+  background: linear-gradient(180deg, rgb(15 16 17 / 82%) 0%, rgb(15 16 17 / 42%) 52%, transparent 100%);
 }
 
 .control-card {
@@ -260,7 +260,7 @@ select {
 .select-menu {
   position: absolute;
   right: 14px;
-  bottom: calc(100% + 8px);
+  top: calc(100% + 8px);
   left: 14px;
   z-index: 10;
   display: none;
@@ -325,7 +325,7 @@ input[type="range"]:focus-visible {
 
   .controls {
     right: 20px;
-    bottom: 20px;
+    top: 20px;
     left: 20px;
     grid-template-columns: repeat(2, minmax(0, 1fr));
     max-width: none;
@@ -335,7 +335,7 @@ input[type="range"]:focus-visible {
 @media (max-width: 620px) {
   .controls {
     right: 12px;
-    bottom: 12px;
+    top: 12px;
     left: 12px;
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 12px;
@@ -346,7 +346,7 @@ input[type="range"]:focus-visible {
     border-radius: 8px;
     background: rgb(15 16 17 / 80%);
     backdrop-filter: blur(16px);
-    transform: translateY(24px);
+    transform: translateY(-24px);
   }
 
   .controls::before {

@@ -35,7 +35,7 @@ function scheduleControlsHide(): void {
   controlsHideTimer = window.setTimeout(() => {
     controlsVisible = false;
     syncControlsChrome();
-  }, 2400);
+  }, 700);
 }
 
 function revealControlsTemporarily(): void {
