@@ -10,6 +10,7 @@
     "dev:web:force": "vite --host 127.0.0.1 --port 1420",
     "dev": "tauri dev",
     "build": "tauri build",
+    "install:local": "cp src-tauri/target/release/spectrum ~/.local/bin/spectrum",
     "start": "./src-tauri/target/release/spectrum",
     "start:debug": "RUST_BACKTRACE=1 ./src-tauri/target/release/spectrum"
   },
