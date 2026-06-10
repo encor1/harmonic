@@ -15,7 +15,6 @@ let animationFrame = 0;
 let controlsHideTimer = 0;
 let controlsVisible = true;
 let controlsHovered = false;
-let controlsFocused = false;
 
 function syncControlsChrome(): void {
   const inertControls = ui.controlsPanel as HTMLElement & { inert: boolean };
@@ -25,16 +24,26 @@ function syncControlsChrome(): void {
   inertControls.inert = !controlsVisible;
 }
 
+function hideControls(): void {
+  const activeElement = document.activeElement;
+
+  if (activeElement instanceof HTMLElement && ui.controlsPanel.contains(activeElement)) {
+    activeElement.blur();
+  }
+
+  controlsVisible = false;
+  syncControlsChrome();
+}
+
 function scheduleControlsHide(): void {
   window.clearTimeout(controlsHideTimer);
 
-  if (controlsHovered || controlsFocused) {
+  if (controlsHovered) {
     return;
   }
 
   controlsHideTimer = window.setTimeout(() => {
-    controlsVisible = false;
-    syncControlsChrome();
+    hideControls();
   }, 700);
 }
 
@@ -127,13 +136,11 @@ ui.controlsPanel.addEventListener("pointerleave", () => {
   scheduleControlsHide();
 });
 ui.controlsPanel.addEventListener("focusin", () => {
-  controlsFocused = true;
   controlsVisible = true;
   syncControlsChrome();
-  window.clearTimeout(controlsHideTimer);
+  scheduleControlsHide();
 });
 ui.controlsPanel.addEventListener("focusout", () => {
-  controlsFocused = false;
   scheduleControlsHide();
 });
 window.addEventListener("keydown", (event) => {
@@ -143,7 +150,6 @@ window.addEventListener("keydown", (event) => {
 
   controlsVisible = false;
   controlsHovered = false;
-  controlsFocused = false;
   window.clearTimeout(controlsHideTimer);
   syncControlsChrome();
 });
