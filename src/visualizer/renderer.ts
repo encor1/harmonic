@@ -209,6 +209,13 @@ export class VisualizerRenderer {
     };
   }
 
+  private getResponsiveAmplitudeHeight(height: number, reservedPixels: number): number {
+    const usableHeight = Math.max(1, height - reservedPixels);
+    const referenceHeight = 640;
+    const compensation = Math.sqrt(referenceHeight / Math.max(280, height));
+    return usableHeight * Math.min(1.65, Math.max(1, compensation));
+  }
+
   private drawSpectrumBars(width: number, height: number, values: number[]): void {
     const colors = this.colors();
     const bars = values.length;
@@ -216,7 +223,8 @@ export class VisualizerRenderer {
     const falloff = getPeakFalloff(this.ui);
     const gap = Math.max(2, Math.floor(width / 260));
     const barWidth = Math.max(3, (width - gap * (bars - 1)) / bars);
-    const maxHeight = height - 44;
+    const usableHeight = Math.max(1, height - 44);
+    const maxHeight = this.getResponsiveAmplitudeHeight(height, 44);
 
     if (this.peakData.length !== bars) {
       this.peakData = Array.from({ length: bars }, () => 0);
@@ -225,7 +233,7 @@ export class VisualizerRenderer {
     for (let i = 0; i < bars; i += 1) {
       const value = Math.min(255, values[i] * gain);
       const normalized = Math.pow(value / 255, 1.25);
-      const barHeight = Math.max(3, normalized * maxHeight);
+      const barHeight = Math.min(usableHeight, Math.max(3, normalized * maxHeight));
       const x = i * (barWidth + gap);
       const y = height - 24 - barHeight;
 
