@@ -19,5 +19,5 @@ fn configure_linux_webview_environment() {}
 
 fn main() {
     configure_linux_webview_environment();
-    retro_spectrum_visualizer_lib::run();
+    retro_harmonic_visualizer_lib::run();
 }

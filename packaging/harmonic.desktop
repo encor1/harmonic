@@ -1,9 +1,9 @@
 [Desktop Entry]
 Type=Application
-Name=Spectrum
-Comment=Spectrum desktop app
-Exec=spectrum
-Icon=spectrum
+Name=Harmonic
+Comment=Harmonic desktop app
+Exec=harmonic
+Icon=harmonic
 Terminal=false
 Categories=AudioVideo;Audio;Utility;
 StartupNotify=true

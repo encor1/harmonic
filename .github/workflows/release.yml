@@ -42,15 +42,15 @@ jobs:
         run: |
           mkdir -p release
 
-          cp src-tauri/target/release/spectrum release/spectrum
-          cp packaging/spectrum.desktop release/spectrum.desktop
+          cp src-tauri/target/release/harmonic release/harmonic
+          cp packaging/harmonic.desktop release/harmonic.desktop
 
-          cp src-tauri/icons/128x128@2x.png release/spectrum-256.png
-          cp src-tauri/icons/icon.png release/spectrum-512.png
+          cp src-tauri/icons/128x128@2x.png release/harmonic-256.png
+          cp src-tauri/icons/icon.png release/harmonic-512.png
 
-          tar -czf spectrum-linux-x86_64.tar.gz -C release .
+          tar -czf harmonic-linux-x86_64.tar.gz -C release .
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          files: spectrum-linux-x86_64.tar.gz
+          files: harmonic-linux-x86_64.tar.gz

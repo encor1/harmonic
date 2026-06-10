@@ -1,5 +1,5 @@
 {
-  "name": "spectrum",
+  "name": "harmonic",
   "version": "0.1.0",
   "private": true,
   "type": "module",
@@ -10,9 +10,9 @@
     "dev:web:force": "vite --host 127.0.0.1 --port 1420",
     "dev": "tauri dev",
     "build": "tauri build",
-    "install:local": "cp src-tauri/target/release/spectrum ~/.local/bin/spectrum",
-    "start": "./src-tauri/target/release/spectrum",
-    "start:debug": "RUST_BACKTRACE=1 ./src-tauri/target/release/spectrum"
+    "install:local": "cp src-tauri/target/release/harmonic ~/.local/bin/harmonic",
+    "start": "./src-tauri/target/release/harmonic",
+    "start:debug": "RUST_BACKTRACE=1 ./src-tauri/target/release/harmonic"
   },
   "devDependencies": {
     "@tauri-apps/cli": "^2.0.0",

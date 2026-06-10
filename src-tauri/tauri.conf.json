@@ -1,8 +1,8 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
-  "productName": "Spectrum",
+  "productName": "Harmonic",
   "version": "0.1.0",
-  "identifier": "dev.local.spectrum",
+  "identifier": "dev.local.harmonic",
   "build": {
     "devUrl": "http://127.0.0.1:1420",
     "beforeDevCommand": "npm run dev:web",
@@ -14,7 +14,7 @@
     "windows": [
       {
         "label": "main",
-        "title": "Spectrum",
+        "title": "Harmonic",
         "width": 1180,
         "height": 820
       }

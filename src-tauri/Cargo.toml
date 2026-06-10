@@ -1,10 +1,10 @@
 [package]
-name = "spectrum"
+name = "harmonic"
 version = "0.1.0"
 edition = "2021"
 
 [lib]
-name = "retro_spectrum_visualizer_lib"
+name = "retro_harmonic_visualizer_lib"
 crate-type = ["staticlib", "cdylib", "rlib"]
 
 [build-dependencies]
