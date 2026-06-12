@@ -9,11 +9,14 @@ import { VisualizerRenderer } from "./visualizer/renderer";
 const ui = getUiElements();
 const renderer = new VisualizerRenderer(ui);
 setupUpwardSelects([ui.paletteControl]);
+const canvasResizeObserver = typeof ResizeObserver === "undefined" ? null : new ResizeObserver(() => renderer.resizeCanvas());
+canvasResizeObserver?.observe(ui.canvas);
 
 const browserCapture = createBrowserCapture(() => resetToIdle());
 const nativeCapture = createNativeCapture(() => undefined);
 
 let animationFrame = 0;
+let controlsRevealFrame = 0;
 let controlsHideTimer = 0;
 let controlsVisible = true;
 let controlsHovered = false;
@@ -30,6 +33,24 @@ function syncControlsChrome(): void {
   ui.shell.classList.toggle("controls-visible", controlsVisible);
   ui.controlsPanel.setAttribute("aria-hidden", String(!controlsVisible));
   inertControls.inert = !controlsVisible;
+}
+
+function setControlsVisible(isVisible: boolean): void {
+  if (controlsVisible === isVisible) {
+    return;
+  }
+
+  controlsVisible = isVisible;
+  syncControlsChrome();
+}
+
+function cancelControlsReveal(): void {
+  if (!controlsRevealFrame) {
+    return;
+  }
+
+  cancelAnimationFrame(controlsRevealFrame);
+  controlsRevealFrame = 0;
 }
 
 function syncSettingsPanel(): void {
@@ -53,14 +74,19 @@ function setSettingsPanelOpen(isOpen: boolean): void {
 }
 
 function hideControls(): void {
+  cancelControlsReveal();
+
+  if (!controlsVisible) {
+    return;
+  }
+
   const activeElement = document.activeElement;
 
   if (activeElement instanceof HTMLElement && ui.controlsPanel.contains(activeElement)) {
     activeElement.blur();
   }
 
-  controlsVisible = false;
-  syncControlsChrome();
+  setControlsVisible(false);
 }
 
 function scheduleControlsHide(): void {
@@ -76,9 +102,15 @@ function scheduleControlsHide(): void {
 }
 
 function revealControlsTemporarily(): void {
-  controlsVisible = true;
-  syncControlsChrome();
-  scheduleControlsHide();
+  if (controlsRevealFrame) {
+    return;
+  }
+
+  controlsRevealFrame = requestAnimationFrame(() => {
+    controlsRevealFrame = 0;
+    setControlsVisible(true);
+    scheduleControlsHide();
+  });
 }
 
 function resetToIdle(): void {
@@ -244,14 +276,12 @@ ui.resetModeButton.addEventListener("click", () => {
   void saveSettings();
   renderer.resetModeState();
 });
-window.addEventListener("pointermove", revealControlsTemporarily);
-window.addEventListener("mousemove", revealControlsTemporarily);
-window.addEventListener("pointerdown", revealControlsTemporarily);
+window.addEventListener("pointermove", revealControlsTemporarily, { passive: true });
+window.addEventListener("pointerdown", revealControlsTemporarily, { passive: true });
 for (const controlsSurface of [ui.topToolbar, ui.settingsPanel]) {
   controlsSurface.addEventListener("pointerenter", () => {
     controlsHovered = true;
-    controlsVisible = true;
-    syncControlsChrome();
+    setControlsVisible(true);
     window.clearTimeout(controlsHideTimer);
   });
   controlsSurface.addEventListener("pointerleave", () => {
@@ -260,8 +290,7 @@ for (const controlsSurface of [ui.topToolbar, ui.settingsPanel]) {
   });
   controlsSurface.addEventListener("focusin", () => {
     controlsHovered = true;
-    controlsVisible = true;
-    syncControlsChrome();
+    setControlsVisible(true);
     window.clearTimeout(controlsHideTimer);
   });
   controlsSurface.addEventListener("focusout", () => {
@@ -278,14 +307,16 @@ window.addEventListener("keydown", (event) => {
     return;
   }
 
-  controlsVisible = false;
   controlsHovered = false;
+  cancelControlsReveal();
   window.clearTimeout(controlsHideTimer);
-  syncControlsChrome();
+  setControlsVisible(false);
 });
 window.addEventListener("resize", () => renderer.resizeCanvas());
 window.addEventListener("beforeunload", () => {
   cancelAnimationFrame(animationFrame);
+  cancelControlsReveal();
+  canvasResizeObserver?.disconnect();
   window.clearTimeout(controlsHideTimer);
   window.clearTimeout(settingsSaveTimer);
   updatePersistedMode(activeMode);
@@ -300,6 +331,7 @@ async function initialize(): Promise<void> {
   syncSettingsBackedUi();
   syncSettingsPanel();
   syncControlsChrome();
+  renderer.resizeCanvas();
   scheduleControlsHide();
   render();
   void startCapture();

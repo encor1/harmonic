@@ -6,7 +6,7 @@ use std::{
     process::{Child, Command, Stdio},
     sync::{
         atomic::{AtomicBool, Ordering},
-        Arc, Mutex,
+        Arc, Mutex, OnceLock,
     },
     thread,
 };
@@ -16,6 +16,9 @@ const SAMPLE_RATE: f32 = 44_100.0;
 const SAMPLE_WINDOW: usize = 2048;
 const SAMPLE_HOP: usize = 512;
 const BAND_COUNT: usize = 64;
+
+static GOERTZEL_COEFFICIENTS: OnceLock<Vec<f32>> = OnceLock::new();
+static HANN_WINDOW: OnceLock<Vec<f32>> = OnceLock::new();
 
 #[derive(Default)]
 struct CaptureState {
@@ -127,10 +130,7 @@ fn load_visualizer_settings(app: AppHandle) -> Result<Option<VisualizerSettings>
 }
 
 #[tauri::command]
-fn save_visualizer_settings(
-    app: AppHandle,
-    settings: VisualizerSettings,
-) -> Result<(), String> {
+fn save_visualizer_settings(app: AppHandle, settings: VisualizerSettings) -> Result<(), String> {
     let path = settings_path(&app)?;
     let parent = path
         .parent()
@@ -199,10 +199,11 @@ fn analyze_samples(samples: &[i16]) -> SpectrumPayload {
         };
     }
 
-    for band in 0..BAND_COUNT {
-        let progress = band as f32 / (BAND_COUNT - 1) as f32;
-        let frequency = 40.0_f32 * (16_000.0_f32 / 40.0_f32).powf(progress);
-        let magnitude = goertzel_magnitude(samples, frequency);
+    let coefficients = goertzel_coefficients();
+    let window = hann_window();
+
+    for &coefficient in coefficients {
+        let magnitude = goertzel_magnitude(samples, coefficient, window);
         magnitudes.push(magnitude);
     }
 
@@ -227,15 +228,36 @@ fn shape_spectrum(magnitudes: &[f32]) -> Vec<u8> {
         .collect()
 }
 
-fn goertzel_magnitude(samples: &[i16], frequency: f32) -> f32 {
-    let normalized_frequency = frequency / SAMPLE_RATE;
-    let coefficient = 2.0 * (2.0 * std::f32::consts::PI * normalized_frequency).cos();
+fn goertzel_coefficients() -> &'static [f32] {
+    GOERTZEL_COEFFICIENTS.get_or_init(|| {
+        (0..BAND_COUNT)
+            .map(|band| {
+                let progress = band as f32 / (BAND_COUNT - 1) as f32;
+                let frequency = 40.0_f32 * (16_000.0_f32 / 40.0_f32).powf(progress);
+                let normalized_frequency = frequency / SAMPLE_RATE;
+                2.0 * (2.0 * std::f32::consts::PI * normalized_frequency).cos()
+            })
+            .collect()
+    })
+}
+
+fn hann_window() -> &'static [f32] {
+    HANN_WINDOW.get_or_init(|| {
+        (0..SAMPLE_WINDOW)
+            .map(|index| {
+                0.5 - 0.5
+                    * (2.0 * std::f32::consts::PI * index as f32 / (SAMPLE_WINDOW - 1) as f32).cos()
+            })
+            .collect()
+    })
+}
+
+fn goertzel_magnitude(samples: &[i16], coefficient: f32, window: &[f32]) -> f32 {
     let mut previous = 0.0_f32;
     let mut previous_2 = 0.0_f32;
 
     for (index, &sample) in samples.iter().enumerate() {
-        let window = hann_window(index, samples.len());
-        let value = f32::from(sample) / f32::from(i16::MAX) * window;
+        let value = f32::from(sample) / f32::from(i16::MAX) * window[index];
         let current = value + coefficient * previous - previous_2;
         previous_2 = previous;
         previous = current;
@@ -243,10 +265,6 @@ fn goertzel_magnitude(samples: &[i16], frequency: f32) -> f32 {
 
     let power = previous_2 * previous_2 + previous * previous - coefficient * previous * previous_2;
     power.max(0.0).sqrt() / samples.len() as f32
-}
-
-fn hann_window(index: usize, len: usize) -> f32 {
-    0.5 - 0.5 * (2.0 * std::f32::consts::PI * index as f32 / (len - 1) as f32).cos()
 }
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]

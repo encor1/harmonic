@@ -83,6 +83,15 @@ function enhanceValues(values: number[]): number[] {
 
 type AudioByteArray = Uint8Array<ArrayBuffer>;
 
+interface AnalyzerBinRangeCache {
+  bars: number;
+  frequencyDataLength: number;
+  sampleRate: number;
+  ranges: Array<{ low: number; high: number }>;
+}
+
+let analyzerBinRangeCache: AnalyzerBinRangeCache | null = null;
+
 function averageBin(frequencyData: AudioByteArray, start: number, end: number): number {
   let sum = 0;
   let count = 0;
@@ -102,18 +111,21 @@ function frequencyToBin(audioContext: AudioContext, frequencyData: AudioByteArra
   return Math.max(0, Math.min(frequencyData.length - 1, index));
 }
 
-export function getAnalyzerValues(
-  ui: UiElements,
-  audioContext: AudioContext,
-  analyser: AnalyserNode,
-  frequencyData: AudioByteArray,
-): number[] {
-  const bars = getBars(ui);
-  const minFrequency = 35;
-  const maxFrequency = Math.min(18_000, audioContext.sampleRate / 2);
-  const values: number[] = [];
+function getAnalyzerBinRanges(audioContext: AudioContext, frequencyData: AudioByteArray, bars: number): Array<{ low: number; high: number }> {
+  const sampleRate = audioContext.sampleRate;
 
-  analyser.getByteFrequencyData(frequencyData);
+  if (
+    analyzerBinRangeCache &&
+    analyzerBinRangeCache.bars === bars &&
+    analyzerBinRangeCache.frequencyDataLength === frequencyData.length &&
+    analyzerBinRangeCache.sampleRate === sampleRate
+  ) {
+    return analyzerBinRangeCache.ranges;
+  }
+
+  const minFrequency = 35;
+  const maxFrequency = Math.min(18_000, sampleRate / 2);
+  const ranges: Array<{ low: number; high: number }> = [];
 
   for (let index = 0; index < bars; index += 1) {
     const lowProgress = index / bars;
@@ -122,7 +134,34 @@ export function getAnalyzerValues(
     const highFrequency = minFrequency * (maxFrequency / minFrequency) ** highProgress;
     const low = frequencyToBin(audioContext, frequencyData, lowFrequency);
     const high = frequencyToBin(audioContext, frequencyData, highFrequency);
-    values.push(averageBin(frequencyData, low, Math.max(low + 1, high + 1)));
+    ranges.push({ low, high: Math.max(low + 1, high + 1) });
+  }
+
+  analyzerBinRangeCache = {
+    bars,
+    frequencyDataLength: frequencyData.length,
+    sampleRate,
+    ranges,
+  };
+
+  return ranges;
+}
+
+export function getAnalyzerValues(
+  ui: UiElements,
+  audioContext: AudioContext,
+  analyser: AnalyserNode,
+  frequencyData: AudioByteArray,
+): number[] {
+  const bars = getBars(ui);
+  const binRanges = getAnalyzerBinRanges(audioContext, frequencyData, bars);
+  const values: number[] = [];
+
+  analyser.getByteFrequencyData(frequencyData);
+
+  for (let index = 0; index < bars; index += 1) {
+    const range = binRanges[index];
+    values.push(averageBin(frequencyData, range.low, range.high));
   }
 
   return enhanceValues(values);

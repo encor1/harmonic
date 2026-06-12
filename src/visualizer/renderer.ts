@@ -15,38 +15,52 @@ interface Particle {
   band: number;
 }
 
+interface NodePoint {
+  x: number;
+  y: number;
+  value: number;
+}
+
+const MAX_CANVAS_PIXEL_RATIO = 2;
+
 export class VisualizerRenderer {
   private peakData: number[] = [];
   private smoothedValues: number[] = [];
+  private normalizedValues: number[] = [];
+  private nodePoints: NodePoint[] = [];
   private pulsePhase = 0;
   private modeSignature = "";
   private particles: Particle[] = [];
   private lastRenderTime = performance.now();
   private frameDeltaSeconds = 1 / 60;
+  private backgroundGradient: CanvasGradient | null = null;
+  private backgroundGradientHeight = 0;
 
   constructor(private readonly ui: UiElements) {}
 
   resizeCanvas(): void {
     const rect = this.ui.canvas.getBoundingClientRect();
-    const scale = window.devicePixelRatio || 1;
+    const scale = Math.min(window.devicePixelRatio || 1, MAX_CANVAS_PIXEL_RATIO);
     const width = Math.max(1, Math.floor(rect.width * scale));
     const height = Math.max(1, Math.floor(rect.height * scale));
 
     if (this.ui.canvas.width !== width || this.ui.canvas.height !== height) {
       this.ui.canvas.width = width;
       this.ui.canvas.height = height;
+      this.backgroundGradient = null;
     }
   }
 
   resetModeState(): void {
     this.peakData = [];
     this.smoothedValues = [];
+    this.normalizedValues = [];
+    this.nodePoints = [];
     this.particles = [];
     this.modeSignature = "";
   }
 
   beginFrame(now: number): void {
-    this.resizeCanvas();
     const deltaSeconds = Math.min(0.05, (now - this.lastRenderTime) / 1000);
     this.lastRenderTime = now;
     this.frameDeltaSeconds = deltaSeconds || 1 / 60;
@@ -107,6 +121,8 @@ export class VisualizerRenderer {
       this.modeSignature = signature;
       this.peakData = [];
       this.smoothedValues = [];
+      this.normalizedValues = [];
+      this.nodePoints = [];
       this.particles = [];
     }
   }
@@ -126,21 +142,26 @@ export class VisualizerRenderer {
     const attackSeconds = 0.055;
     const releaseSeconds = 0.08 + Math.max(0, Math.min(1, falloffProgress)) * 0.22;
 
-    this.smoothedValues = values.map((value, index) => {
+    for (let index = 0; index < values.length; index += 1) {
+      const value = values[index];
       const previous = this.smoothedValues[index] || 0;
       const timeConstant = value > previous ? attackSeconds : releaseSeconds;
       const mix = 1 - Math.exp(-this.frameDeltaSeconds / timeConstant);
-      return previous + (value - previous) * mix;
-    });
+      this.smoothedValues[index] = previous + (value - previous) * mix;
+    }
 
     return this.smoothedValues;
   }
 
   private drawBackground(width: number, height: number): void {
-    const gradient = this.ctx.createLinearGradient(0, 0, 0, height);
-    gradient.addColorStop(0, "#111315");
-    gradient.addColorStop(1, "#0b0c0d");
-    this.ctx.fillStyle = gradient;
+    if (!this.backgroundGradient || this.backgroundGradientHeight !== height) {
+      this.backgroundGradient = this.ctx.createLinearGradient(0, 0, 0, height);
+      this.backgroundGradient.addColorStop(0, "#111315");
+      this.backgroundGradient.addColorStop(1, "#0b0c0d");
+      this.backgroundGradientHeight = height;
+    }
+
+    this.ctx.fillStyle = this.backgroundGradient;
     this.ctx.fillRect(0, 0, width, height);
   }
 
@@ -152,6 +173,12 @@ export class VisualizerRenderer {
     const baseY = height - 20;
     const maxHeight = height * 0.72;
     const now = Date.now() * 0.001;
+    const barGradient = this.ctx.createLinearGradient(0, baseY - maxHeight, 0, baseY);
+
+    barGradient.addColorStop(0, this.colorWithAlpha(colors[3], 0.58));
+    barGradient.addColorStop(0.42, this.colorWithAlpha(colors[1], 0.48));
+    barGradient.addColorStop(1, this.colorWithAlpha(colors[0], 0.55));
+    this.ctx.fillStyle = barGradient;
 
     for (let i = 0; i < bars; i += 1) {
       const x = i * (barWidth + gap);
@@ -159,12 +186,7 @@ export class VisualizerRenderer {
       const offset = Math.sin(i * 1.73) * 0.5 + 0.5;
       const h = 18 + (wave * 0.38 + offset * 0.62) * maxHeight;
       const y = baseY - h;
-      const barGradient = this.ctx.createLinearGradient(0, y, 0, baseY);
-      barGradient.addColorStop(0, this.colorWithAlpha(colors[3], 0.58));
-      barGradient.addColorStop(0.42, this.colorWithAlpha(colors[1], 0.48));
-      barGradient.addColorStop(1, this.colorWithAlpha(colors[0], 0.55));
 
-      this.ctx.fillStyle = barGradient;
       this.ctx.fillRect(x, y, barWidth, h);
     }
   }
@@ -186,7 +208,14 @@ export class VisualizerRenderer {
 
   private getNormalizedValues(values: number[], power = 1.15): number[] {
     const gain = getGain(this.ui);
-    return values.map((value) => Math.pow(Math.min(255, value * gain) / 255, power));
+
+    this.normalizedValues.length = values.length;
+
+    for (let index = 0; index < values.length; index += 1) {
+      this.normalizedValues[index] = Math.pow(Math.min(255, values[index] * gain) / 255, power);
+    }
+
+    return this.normalizedValues;
   }
 
   private getEnergy(values: number[]): Energy {
@@ -194,18 +223,38 @@ export class VisualizerRenderer {
       return { bass: 0, mid: 0, high: 0, average: 0 };
     }
 
-    const normalized = this.getNormalizedValues(values, 1);
-    const third = Math.max(1, Math.floor(normalized.length / 3));
-    const averageRange = (start: number, end: number): number => {
-      const slice = normalized.slice(start, end);
-      return slice.reduce((sum, value) => sum + value, 0) / Math.max(1, slice.length);
-    };
+    const gain = getGain(this.ui);
+    const third = Math.max(1, Math.floor(values.length / 3));
+    let bass = 0;
+    let bassCount = 0;
+    let mid = 0;
+    let midCount = 0;
+    let high = 0;
+    let highCount = 0;
+    let total = 0;
+
+    for (let index = 0; index < values.length; index += 1) {
+      const normalized = Math.min(255, values[index] * gain) / 255;
+
+      total += normalized;
+
+      if (index < third) {
+        bass += normalized;
+        bassCount += 1;
+      } else if (index < third * 2) {
+        mid += normalized;
+        midCount += 1;
+      } else {
+        high += normalized;
+        highCount += 1;
+      }
+    }
 
     return {
-      bass: averageRange(0, third),
-      mid: averageRange(third, third * 2),
-      high: averageRange(third * 2, normalized.length),
-      average: normalized.reduce((sum, value) => sum + value, 0) / normalized.length,
+      bass: bass / Math.max(1, bassCount),
+      mid: mid / Math.max(1, midCount),
+      high: high / Math.max(1, highCount),
+      average: total / values.length,
     };
   }
 
@@ -225,10 +274,22 @@ export class VisualizerRenderer {
     const barWidth = Math.max(3, (width - gap * (bars - 1)) / bars);
     const usableHeight = Math.max(1, height - 44);
     const maxHeight = this.getResponsiveAmplitudeHeight(height, 44);
+    const barGradient = this.ctx.createLinearGradient(0, height - 24 - maxHeight, 0, height - 24);
+
+    barGradient.addColorStop(0, colors[3]);
+    barGradient.addColorStop(0.26, colors[2]);
+    barGradient.addColorStop(0.62, colors[1]);
+    barGradient.addColorStop(1, colors[0]);
 
     if (this.peakData.length !== bars) {
       this.peakData = Array.from({ length: bars }, () => 0);
     }
+
+    this.ctx.save();
+    this.ctx.globalCompositeOperation = "screen";
+    this.ctx.shadowColor = colors[1];
+    this.ctx.shadowBlur = 12;
+    this.ctx.fillStyle = barGradient;
 
     for (let i = 0; i < bars; i += 1) {
       const value = Math.min(255, values[i] * gain);
@@ -238,22 +299,14 @@ export class VisualizerRenderer {
       const y = height - 24 - barHeight;
 
       this.peakData[i] = Math.max(barHeight, this.peakData[i] * falloff);
-
-      const barGradient = this.ctx.createLinearGradient(0, y, 0, height - 24);
-      barGradient.addColorStop(0, colors[3]);
-      barGradient.addColorStop(0.26, colors[2]);
-      barGradient.addColorStop(0.62, colors[1]);
-      barGradient.addColorStop(1, colors[0]);
-
-      this.ctx.save();
-      this.ctx.globalCompositeOperation = "screen";
-      this.ctx.shadowColor = colors[1];
-      this.ctx.shadowBlur = 12;
-      this.ctx.fillStyle = barGradient;
       this.ctx.fillRect(x, y, barWidth, barHeight);
-      this.ctx.restore();
+    }
 
-      this.ctx.fillStyle = colors[3];
+    this.ctx.restore();
+    this.ctx.fillStyle = colors[3];
+
+    for (let i = 0; i < bars; i += 1) {
+      const x = i * (barWidth + gap);
       this.ctx.fillRect(x, height - 28 - this.peakData[i], barWidth, 3);
     }
   }
@@ -501,16 +554,22 @@ export class VisualizerRenderer {
     this.ctx.shadowColor = colors[0];
     this.ctx.shadowBlur = 12;
 
-    const points = this.particles.map((particle) => {
+    this.nodePoints.length = this.particles.length;
+
+    for (let index = 0; index < this.particles.length; index += 1) {
+      const particle = this.particles[index];
       const bandValue = normalizedValues[particle.band % normalizedValues.length] || 0;
       particle.angle += particle.speed * (0.4 + energy.high * 2.2);
       const radius = particle.radius * (0.72 + bandValue * 0.72);
-      return {
-        x: centerX + Math.cos(particle.angle) * radius,
-        y: centerY + Math.sin(particle.angle * 1.24) * radius * 0.72,
-        value: bandValue,
-      };
-    });
+      const point = this.nodePoints[index] || { x: 0, y: 0, value: 0 };
+
+      point.x = centerX + Math.cos(particle.angle) * radius;
+      point.y = centerY + Math.sin(particle.angle * 1.24) * radius * 0.72;
+      point.value = bandValue;
+      this.nodePoints[index] = point;
+    }
+
+    const points = this.nodePoints;
 
     for (let i = 0; i < points.length; i += 1) {
       for (let j = i + 1; j < Math.min(points.length, i + 7); j += 1) {
@@ -530,13 +589,13 @@ export class VisualizerRenderer {
       }
     }
 
-    points.forEach((point) => {
+    for (const point of points) {
       const radius = 2 + point.value * 7;
       this.ctx.fillStyle = this.getPaletteColor(colors, point.value);
       this.ctx.beginPath();
       this.ctx.arc(point.x, point.y, radius, 0, Math.PI * 2);
       this.ctx.fill();
-    });
+    }
 
     this.ctx.restore();
   }
