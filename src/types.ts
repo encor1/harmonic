@@ -23,7 +23,7 @@ export interface NativeSpectrum {
 
 export interface TauriRuntime {
   core?: {
-    invoke<T = unknown>(command: string): Promise<T>;
+    invoke<T = unknown>(command: string, args?: Record<string, unknown>): Promise<T>;
   };
   event?: {
     listen<T = unknown>(

@@ -1,6 +1,8 @@
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 use std::{
+    fs,
     io::Read,
+    path::PathBuf,
     process::{Child, Command, Stdio},
     sync::{
         atomic::{AtomicBool, Ordering},
@@ -8,7 +10,7 @@ use std::{
     },
     thread,
 };
-use tauri::{AppHandle, Emitter, State};
+use tauri::{AppHandle, Emitter, Manager, State};
 
 const SAMPLE_RATE: f32 = 44_100.0;
 const SAMPLE_WINDOW: usize = 2048;
@@ -29,6 +31,14 @@ struct CaptureProcess {
 struct SpectrumPayload {
     bands: Vec<u8>,
     level: u8,
+}
+
+#[derive(Clone, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+struct VisualizerSettings {
+    version: u8,
+    last_mode: String,
+    modes: serde_json::Value,
 }
 
 #[tauri::command]
@@ -98,6 +108,50 @@ fn stop_linux_audio(state: State<'_, CaptureState>) -> Result<(), String> {
     }
 
     Ok(())
+}
+
+#[tauri::command]
+fn load_visualizer_settings(app: AppHandle) -> Result<Option<VisualizerSettings>, String> {
+    let path = settings_path(&app)?;
+
+    if !path.exists() {
+        return Ok(None);
+    }
+
+    let contents = fs::read_to_string(&path)
+        .map_err(|error| format!("Could not read visualizer settings. ({error})"))?;
+    serde_json::from_str(&contents)
+        .map(Some)
+        .map_err(|error| format!("Could not parse visualizer settings. ({error})"))
+}
+
+#[tauri::command]
+fn save_visualizer_settings(
+    app: AppHandle,
+    settings: VisualizerSettings,
+) -> Result<(), String> {
+    let path = settings_path(&app)?;
+    let parent = path
+        .parent()
+        .ok_or_else(|| "Could not resolve visualizer settings directory.".to_string())?;
+
+    fs::create_dir_all(parent)
+        .map_err(|error| format!("Could not create visualizer settings directory. ({error})"))?;
+
+    let contents = serde_json::to_string_pretty(&settings)
+        .map_err(|error| format!("Could not serialize visualizer settings. ({error})"))?;
+
+    fs::write(path, contents)
+        .map_err(|error| format!("Could not save visualizer settings. ({error})"))
+}
+
+fn settings_path(app: &AppHandle) -> Result<PathBuf, String> {
+    let mut dir = app
+        .path()
+        .app_config_dir()
+        .map_err(|error| format!("Could not resolve app config directory. ({error})"))?;
+    dir.push("settings.json");
+    Ok(dir)
 }
 
 fn read_audio_stream<R: Read>(mut stream: R, app: AppHandle, running: Arc<AtomicBool>) {
@@ -199,6 +253,8 @@ pub fn run() {
     tauri::Builder::default()
         .manage(CaptureState::default())
         .invoke_handler(tauri::generate_handler![
+            load_visualizer_settings,
+            save_visualizer_settings,
             start_linux_audio,
             stop_linux_audio
         ])

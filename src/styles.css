@@ -91,7 +91,7 @@ canvas {
   left: 32px;
   z-index: 3;
   display: grid;
-  grid-template-columns: repeat(6, minmax(132px, 1fr));
+  grid-template-columns: repeat(7, minmax(132px, 1fr));
   gap: 12px;
   width: auto;
   max-width: 1520px;
@@ -102,6 +102,10 @@ canvas {
   transition:
     opacity 180ms ease,
     transform 180ms ease;
+}
+
+.action-card {
+  grid-template-rows: auto minmax(38px, auto);
 }
 
 .controls-visible .controls {
@@ -227,6 +231,21 @@ select {
     rgb(14 14 15 / 84%);
 }
 
+.action-button {
+  min-height: 38px;
+  border: 1px solid rgb(255 255 255 / 8%);
+  border-radius: 2px;
+  color: var(--text);
+  background: rgb(14 14 15 / 84%);
+  cursor: pointer;
+}
+
+.action-button:hover,
+.action-button:focus-visible {
+  border-color: rgb(99 247 255 / 50%);
+  background: rgb(255 255 255 / 9%);
+}
+
 .select-label {
   position: relative;
   overflow: visible;
@@ -299,6 +318,7 @@ select {
 
 select:focus,
 .select-trigger:focus-visible,
+.action-button:focus-visible,
 input[type="range"]:focus-visible {
   outline: 1px solid var(--cyan);
   outline-offset: 4px;

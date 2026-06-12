@@ -10,6 +10,7 @@
     "dev:web:force": "vite --host 127.0.0.1 --port 1420",
     "dev": "tauri dev",
     "build": "tauri build",
+    "generate:icons": "npx tauri icon app-icon.png",
     "install:local": "cp src-tauri/target/release/harmonic ~/.local/bin/harmonic",
     "start": "./src-tauri/target/release/harmonic",
     "start:debug": "RUST_BACKTRACE=1 ./src-tauri/target/release/harmonic"

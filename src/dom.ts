@@ -1,6 +1,8 @@
 import type { PaletteName, VisualizerMode } from "./types";
 import { palettes } from "./palettes";
 
+const customSelectSync = new WeakMap<HTMLSelectElement, () => void>();
+
 function requireElement<T extends HTMLElement>(id: string, constructor: new () => T): T {
   const element = document.getElementById(id);
 
@@ -28,6 +30,7 @@ export interface UiElements {
   modeButtons: HTMLButtonElement[];
   paletteControl: HTMLSelectElement;
   palettePreview: HTMLElement | null;
+  resetModeButton: HTMLButtonElement;
 }
 
 export function getUiElements(): UiElements {
@@ -55,6 +58,7 @@ export function getUiElements(): UiElements {
     modeButtons: Array.from(document.querySelectorAll<HTMLButtonElement>("[data-mode]")),
     paletteControl: requireElement("palette", HTMLSelectElement),
     palettePreview: document.querySelector<HTMLElement>(".palette-preview"),
+    resetModeButton: requireElement("resetMode", HTMLButtonElement),
   };
 }
 
@@ -146,6 +150,8 @@ export function setupUpwardSelects(selects: HTMLSelectElement[]): void {
       });
     }
 
+    customSelectSync.set(select, syncCustomSelect);
+
     function closeSelect(): void {
       selectCard.classList.remove("is-open");
       trigger.setAttribute("aria-expanded", "false");
@@ -217,6 +223,10 @@ export function setupUpwardSelects(selects: HTMLSelectElement[]): void {
       }
     });
   });
+}
+
+export function syncUpwardSelects(selects: HTMLSelectElement[]): void {
+  selects.forEach((select) => customSelectSync.get(select)?.());
 }
 
 function syncRangeFill(input: HTMLInputElement): void {
