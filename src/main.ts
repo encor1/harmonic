@@ -1,9 +1,9 @@
 import { createBrowserCapture } from "./audio/browserCapture";
 import { createNativeCapture, isTauriRuntime } from "./audio/tauriCapture";
 import { getUiElements, setupUpwardSelects, syncControlReadouts, syncModeControls, syncPalettePreview, syncUpwardSelects } from "./dom";
-import { applyControlSettings, collectControlSettings, createDefaultControlSettings, createInitialSettings, createSettingsStore, getSettingsForMode, normalizePersistedSettings, resetModeToDefaults, type PersistedSettings } from "./settings";
+import { applyControlSettings, collectControlSettings, createDefaultModeSettings, createInitialSettings, createSettingsStore, getSettingsForMode, normalizePersistedSettings, resetModeToDefaults, setGlobalPalette, type ModeControlSettings, type PersistedSettings } from "./settings";
 import { getAnalyzerValues, getNativeValues } from "./spectrum";
-import type { VisualizerMode } from "./types";
+import type { PaletteName, VisualizerMode } from "./types";
 import { VisualizerRenderer } from "./visualizer/renderer";
 
 const ui = getUiElements();
@@ -19,7 +19,7 @@ let controlsVisible = true;
 let controlsHovered = false;
 let settingsPanelOpen = false;
 const settingsStore = createSettingsStore();
-const defaultControlSettings = createDefaultControlSettings(ui);
+const defaultModeSettings: ModeControlSettings = createDefaultModeSettings(ui);
 let persistedSettings: PersistedSettings = createInitialSettings(ui);
 let activeMode: VisualizerMode = ui.modeControl.value as VisualizerMode;
 let settingsSaveTimer = 0;
@@ -89,7 +89,7 @@ function resetToIdle(): void {
 
 async function loadSettings(): Promise<void> {
   try {
-    persistedSettings = normalizePersistedSettings(ui, await settingsStore.load(), defaultControlSettings);
+    persistedSettings = normalizePersistedSettings(ui, await settingsStore.load(), defaultModeSettings);
   } catch (error) {
     console.error(error);
     persistedSettings = createInitialSettings(ui);
@@ -97,7 +97,7 @@ async function loadSettings(): Promise<void> {
 
   ui.modeControl.value = persistedSettings.lastMode;
   activeMode = persistedSettings.lastMode;
-  applyControlSettings(ui, getSettingsForMode(persistedSettings, activeMode, defaultControlSettings));
+  applyControlSettings(ui, getSettingsForMode(persistedSettings, activeMode, defaultModeSettings));
 }
 
 function syncSettingsBackedUi(): void {
@@ -111,9 +111,10 @@ function updatePersistedMode(mode: VisualizerMode): void {
   persistedSettings = {
     ...persistedSettings,
     lastMode: mode,
+    palette: ui.paletteControl.value as PaletteName,
     modes: {
       ...persistedSettings.modes,
-      [mode]: collectControlSettings(ui, defaultControlSettings),
+      [mode]: collectControlSettings(ui, getSettingsForMode(persistedSettings, mode, defaultModeSettings)),
     },
   };
 }
@@ -193,7 +194,7 @@ ui.modeControl.addEventListener("change", () => {
     ...persistedSettings,
     lastMode: nextMode,
   };
-  applyControlSettings(ui, getSettingsForMode(persistedSettings, nextMode, defaultControlSettings));
+  applyControlSettings(ui, getSettingsForMode(persistedSettings, nextMode, defaultModeSettings));
   syncSettingsBackedUi();
   void saveSettings();
   renderer.resetModeState();
@@ -228,16 +229,17 @@ ui.modeButtons.forEach((button) => {
   });
 });
 ui.paletteControl.addEventListener("change", () => {
+  persistedSettings = setGlobalPalette(persistedSettings, ui.paletteControl.value as PaletteName);
   syncPalettePreview(ui);
-  saveCurrentModeNow();
+  void saveSettings();
   renderer.resetModeState();
 });
 ui.settingsToggleButton.addEventListener("click", () => {
   setSettingsPanelOpen(!settingsPanelOpen);
 });
 ui.resetModeButton.addEventListener("click", () => {
-  persistedSettings = resetModeToDefaults(persistedSettings, activeMode, defaultControlSettings);
-  applyControlSettings(ui, defaultControlSettings);
+  persistedSettings = resetModeToDefaults(persistedSettings, activeMode, defaultModeSettings);
+  applyControlSettings(ui, getSettingsForMode(persistedSettings, activeMode, defaultModeSettings));
   syncSettingsBackedUi();
   void saveSettings();
   renderer.resetModeState();

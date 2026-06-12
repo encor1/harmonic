@@ -38,6 +38,7 @@ struct SpectrumPayload {
 struct VisualizerSettings {
     version: u8,
     last_mode: String,
+    palette: Option<String>,
     modes: serde_json::Value,
 }
 

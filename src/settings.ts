@@ -15,13 +15,68 @@ export interface ControlSettings {
 export interface PersistedSettings {
   version: number;
   lastMode: VisualizerMode;
+  palette?: PaletteName;
   modes: Partial<Record<VisualizerMode, ControlSettings>>;
 }
+
+export type ModeControlSettings = Partial<Record<VisualizerMode, ControlSettings>>;
 
 export interface SettingsStore {
   load(): Promise<PersistedSettings | null>;
   save(settings: PersistedSettings): Promise<void>;
 }
+
+const DEFAULT_MODE_CONTROL_SETTINGS: ModeControlSettings = {
+  bars: {
+    gain: 1.45,
+    release: 0.78,
+    peakFalloff: 99.5,
+    bars: 64,
+    palette: "classic",
+  },
+  bloom: {
+    gain: 1.45,
+    release: 0.72,
+    peakFalloff: 85,
+    bars: 96,
+    palette: "classic",
+  },
+  circle: {
+    gain: 2.25,
+    release: 0.72,
+    peakFalloff: 85,
+    bars: 32,
+    palette: "classic",
+  },
+  mirror: {
+    gain: 1.45,
+    release: 0.72,
+    peakFalloff: 85,
+    bars: 72,
+    palette: "classic",
+  },
+  nodes: {
+    gain: 1.45,
+    release: 0.72,
+    peakFalloff: 85,
+    bars: 72,
+    palette: "classic",
+  },
+  orbit: {
+    gain: 1.45,
+    release: 0.72,
+    peakFalloff: 85,
+    bars: 76,
+    palette: "classic",
+  },
+  wave: {
+    gain: 1.45,
+    release: 0.72,
+    peakFalloff: 85,
+    bars: 128,
+    palette: "classic",
+  },
+};
 
 export function createSettingsStore(): SettingsStore {
   const invoke = window.__TAURI__?.core?.invoke;
@@ -59,6 +114,21 @@ export function createDefaultControlSettings(ui: UiElements): ControlSettings {
   };
 }
 
+export function createDefaultModeSettings(ui: UiElements): ModeControlSettings {
+  const fallbackDefaults = createDefaultControlSettings(ui);
+  const defaults: ModeControlSettings = {};
+
+  for (const mode of getModeValues(ui)) {
+    defaults[mode] = sanitizeControlSettings(
+      DEFAULT_MODE_CONTROL_SETTINGS[mode] || fallbackDefaults,
+      fallbackDefaults,
+      ui,
+    );
+  }
+
+  return defaults;
+}
+
 export function collectControlSettings(ui: UiElements, defaults: ControlSettings): ControlSettings {
   return sanitizeControlSettings(
     {
@@ -82,17 +152,21 @@ export function applyControlSettings(ui: UiElements, settings: ControlSettings):
 }
 
 export function createInitialSettings(ui: UiElements): PersistedSettings {
+  const modes = createDefaultModeSettings(ui);
+  const lastMode = getMode(ui);
+
   return {
     version: SETTINGS_VERSION,
-    lastMode: getMode(ui),
-    modes: {},
+    lastMode,
+    palette: getDefaultSettingsForMode(modes, lastMode).palette,
+    modes,
   };
 }
 
 export function normalizePersistedSettings(
   ui: UiElements,
   settings: PersistedSettings | null,
-  defaults: ControlSettings,
+  defaults: ModeControlSettings,
 ): PersistedSettings {
   const fallback = createInitialSettings(ui);
 
@@ -101,19 +175,30 @@ export function normalizePersistedSettings(
   }
 
   const lastMode = isValidMode(ui, settings.lastMode) ? settings.lastMode : fallback.lastMode;
+  const palette = resolveGlobalPalette(ui, settings, lastMode, fallback.palette || paletteFromDefault(ui));
   const modes: Partial<Record<VisualizerMode, ControlSettings>> = {};
 
   for (const mode of getModeValues(ui)) {
     const modeSettings = settings.modes?.[mode];
+    const modeDefaults = {
+      ...getDefaultSettingsForMode(defaults, mode),
+      palette,
+    };
 
     if (modeSettings) {
-      modes[mode] = sanitizeControlSettings(modeSettings, defaults, ui);
+      modes[mode] = {
+        ...sanitizeControlSettings(modeSettings, modeDefaults, ui),
+        palette,
+      };
+    } else {
+      modes[mode] = modeDefaults;
     }
   }
 
   return {
     version: SETTINGS_VERSION,
     lastMode,
+    palette,
     modes,
   };
 }
@@ -121,23 +206,89 @@ export function normalizePersistedSettings(
 export function getSettingsForMode(
   settings: PersistedSettings,
   mode: VisualizerMode,
-  defaults: ControlSettings,
+  defaults: ModeControlSettings,
 ): ControlSettings {
-  return settings.modes[mode] || defaults;
+  return {
+    ...(settings.modes[mode] || getDefaultSettingsForMode(defaults, mode)),
+    palette: getGlobalPalette(settings, defaults, mode),
+  };
 }
 
 export function resetModeToDefaults(
   settings: PersistedSettings,
   mode: VisualizerMode,
-  defaults: ControlSettings,
+  defaults: ModeControlSettings,
 ): PersistedSettings {
   return {
     ...settings,
     lastMode: mode,
     modes: {
       ...settings.modes,
-      [mode]: defaults,
+      [mode]: {
+        ...getDefaultSettingsForMode(defaults, mode),
+        palette: getGlobalPalette(settings, defaults, mode),
+      },
     },
+  };
+}
+
+export function setGlobalPalette(
+  settings: PersistedSettings,
+  palette: PaletteName,
+): PersistedSettings {
+  const modes: Partial<Record<VisualizerMode, ControlSettings>> = {};
+
+  for (const [mode, modeSettings] of Object.entries(settings.modes) as Array<[VisualizerMode, ControlSettings]>) {
+    modes[mode] = {
+      ...modeSettings,
+      palette,
+    };
+  }
+
+  return {
+    ...settings,
+    palette,
+    modes,
+  };
+}
+
+function resolveGlobalPalette(
+  ui: UiElements,
+  settings: PersistedSettings,
+  lastMode: VisualizerMode,
+  fallback: PaletteName,
+): PaletteName {
+  if (settings.palette && isValidPalette(ui, settings.palette)) {
+    return settings.palette;
+  }
+
+  const activeModePalette = settings.modes?.[lastMode]?.palette;
+
+  if (activeModePalette && isValidPalette(ui, activeModePalette)) {
+    return activeModePalette;
+  }
+
+  return fallback;
+}
+
+function getGlobalPalette(
+  settings: PersistedSettings,
+  defaults: ModeControlSettings,
+  mode: VisualizerMode,
+): PaletteName {
+  return settings.palette || settings.modes[mode]?.palette || getDefaultSettingsForMode(defaults, mode).palette;
+}
+
+function getDefaultSettingsForMode(
+  defaults: ModeControlSettings,
+  mode: VisualizerMode,
+): ControlSettings {
+  return defaults[mode] || {
+    gain: 1,
+    release: 0.86,
+    peakFalloff: 86,
+    bars: 72,
+    palette: "classic",
   };
 }
 
