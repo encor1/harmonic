@@ -235,10 +235,6 @@ ui.paletteControl.addEventListener("change", () => {
 ui.settingsToggleButton.addEventListener("click", () => {
   setSettingsPanelOpen(!settingsPanelOpen);
 });
-ui.settingsCloseButton.addEventListener("click", () => {
-  setSettingsPanelOpen(false);
-  ui.settingsToggleButton.focus();
-});
 ui.resetModeButton.addEventListener("click", () => {
   persistedSettings = resetModeToDefaults(persistedSettings, activeMode, defaultControlSettings);
   applyControlSettings(ui, defaultControlSettings);

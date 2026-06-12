@@ -32,7 +32,6 @@ export interface UiElements {
   paletteControl: HTMLSelectElement;
   palettePreview: HTMLElement | null;
   settingsToggleButton: HTMLButtonElement;
-  settingsCloseButton: HTMLButtonElement;
   settingsPanel: HTMLElement;
   resetModeButton: HTMLButtonElement;
 }
@@ -64,7 +63,6 @@ export function getUiElements(): UiElements {
     paletteControl: requireElement("palette", HTMLSelectElement),
     palettePreview: document.querySelector<HTMLElement>(".palette-preview"),
     settingsToggleButton: requireElement("settingsToggle", HTMLButtonElement),
-    settingsCloseButton: requireElement("settingsClose", HTMLButtonElement),
     settingsPanel: requireElement("settingsPanel", HTMLElement),
     resetModeButton: requireElement("resetMode", HTMLButtonElement),
   };
