@@ -395,6 +395,9 @@ canvas {
 }
 
 .select-option {
+  display: flex;
+  align-items: center;
+  gap: 12px;
   min-height: 36px;
   padding: 0 10px;
   border: 0;
@@ -403,6 +406,19 @@ canvas {
   text-align: left;
   background: transparent;
   cursor: pointer;
+}
+
+.select-option-with-preview {
+  padding-left: 12px;
+}
+
+.select-option-preview {
+  flex: 0 0 auto;
+  width: 56px;
+  height: 12px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, var(--palette-preview, var(--lime), var(--cyan), #d8e5e5, #ffb4ab));
+  box-shadow: 0 0 14px rgb(155 255 113 / 34%);
 }
 
 .select-option:hover,

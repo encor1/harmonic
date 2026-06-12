@@ -182,8 +182,23 @@ export function setupUpwardSelects(selects: HTMLSelectElement[]): void {
       item.type = "button";
       item.className = "select-option";
       item.dataset.value = option.value;
-      item.textContent = option.textContent;
       item.setAttribute("role", "option");
+
+      const optionPalette = palettes[option.value as PaletteName];
+
+      if (select.id === "palette" && optionPalette) {
+        const preview = document.createElement("span");
+        const label = document.createElement("span");
+
+        item.classList.add("select-option-with-preview");
+        preview.className = "select-option-preview";
+        preview.style.setProperty("--palette-preview", optionPalette.join(", "));
+        preview.setAttribute("aria-hidden", "true");
+        label.textContent = option.textContent;
+        item.append(preview, label);
+      } else {
+        item.textContent = option.textContent;
+      }
 
       item.addEventListener("click", () => {
         select.value = option.value;
