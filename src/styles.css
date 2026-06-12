@@ -118,6 +118,7 @@ canvas {
 
 .top-toolbar {
   position: absolute;
+  z-index: 2;
   top: 26px;
   right: auto;
   left: 50%;
@@ -429,6 +430,7 @@ canvas {
 
 .settings-panel {
   position: absolute;
+  z-index: 1;
   top: 152px;
   left: 50%;
   width: max-content;
