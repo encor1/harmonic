@@ -14,38 +14,7 @@
         </div>
 
         <div id="controls" class="controls" aria-label="Visualizer controls">
-          <label class="control-card">
-            <span class="control-header">
-              <span class="control-title">Gain</span>
-              <output id="gainValue" class="control-value" for="gain">1.45x</output>
-            </span>
-            <input id="gain" type="range" min="0.6" max="2.6" value="1.45" step="0.05">
-          </label>
-          <label class="control-card">
-            <span class="control-header">
-              <span class="control-title">Release</span>
-              <output id="releaseValue" class="control-value" for="release">0.86</output>
-            </span>
-            <input id="release" type="range" min="0.72" max="0.96" value="0.86" step="0.01">
-          </label>
-          <label class="control-card">
-            <span class="control-header">
-              <span class="control-title">Peak</span>
-              <output id="peakFalloffValue" class="control-value" for="peakFalloff">86.0</output>
-            </span>
-            <input id="peakFalloff" type="range" min="85" max="99.5" value="86" step="0.5">
-          </label>
-          <label class="control-card">
-            <span class="control-header">
-              <span class="control-title">Bands</span>
-              <output id="barsValue" class="control-value" for="bars">72</output>
-            </span>
-            <input id="bars" type="range" min="32" max="128" value="72" step="4">
-          </label>
-          <div class="control-card select-label">
-            <span class="control-header">
-              <span class="control-title">Mode</span>
-            </span>
+          <div id="topToolbar" class="top-toolbar" aria-label="Visualizer toolbar">
             <select id="mode" aria-label="Visualization mode">
               <option value="bars">Bars</option>
               <option value="circle">Circle</option>
@@ -55,28 +24,123 @@
               <option value="bloom">Bloom</option>
               <option value="nodes">Nodes</option>
             </select>
-          </div>
-          <div class="control-card select-label">
-            <span class="control-header">
-              <span class="control-title">Palette</span>
+
+            <div class="mode-buttons" role="group" aria-label="Visualization modes">
+              <button class="mode-button" type="button" data-mode="bars" aria-label="Bars" aria-pressed="true">
+                <span class="mode-icon mode-icon-bars" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></span>
+                <span class="mode-label">Bars</span>
+              </button>
+              <button class="mode-button" type="button" data-mode="circle" aria-label="Circle" aria-pressed="false">
+                <span class="mode-icon mode-icon-circle" aria-hidden="true"></span>
+                <span class="mode-label">Circle</span>
+              </button>
+              <button class="mode-button" type="button" data-mode="mirror" aria-label="Mirror" aria-pressed="false">
+                <span class="mode-icon mode-icon-mirror" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></span>
+                <span class="mode-label">Mirror</span>
+              </button>
+              <button class="mode-button" type="button" data-mode="wave" aria-label="Wave" aria-pressed="false">
+                <span class="mode-icon mode-icon-wave" aria-hidden="true"></span>
+                <span class="mode-label">Wave</span>
+              </button>
+              <button class="mode-button" type="button" data-mode="orbit" aria-label="Orbit" aria-pressed="false">
+                <span class="mode-icon mode-icon-orbit" aria-hidden="true"></span>
+                <span class="mode-label">Orbit</span>
+              </button>
+              <button class="mode-button" type="button" data-mode="bloom" aria-label="Bloom" aria-pressed="false">
+                <span class="mode-icon mode-icon-bloom" aria-hidden="true"></span>
+                <span class="mode-label">Bloom</span>
+              </button>
+              <button class="mode-button" type="button" data-mode="nodes" aria-label="Nodes" aria-pressed="false">
+                <span class="mode-icon mode-icon-nodes" aria-hidden="true"></span>
+                <span class="mode-label">Nodes</span>
+              </button>
+            </div>
+
+            <div class="toolbar-divider" aria-hidden="true"></div>
+
+            <div class="palette-control select-label">
               <span class="palette-preview" aria-hidden="true"></span>
-            </span>
-            <select id="palette">
-              <option value="classic">Classic</option>
-              <option value="fire">Fire</option>
-              <option value="ice">Ice</option>
-              <option value="terminal">Terminal</option>
-              <option value="aurora">Aurora</option>
-              <option value="ultraviolet">Ultraviolet</option>
-              <option value="signal">Signal</option>
-            </select>
+              <select id="palette" aria-label="Palette">
+                <option value="classic">Classic</option>
+                <option value="fire">Fire</option>
+                <option value="ice">Ice</option>
+                <option value="terminal">Terminal</option>
+                <option value="aurora">Aurora</option>
+                <option value="ultraviolet">Ultraviolet</option>
+                <option value="signal">Signal</option>
+              </select>
+            </div>
+
+            <div class="toolbar-divider" aria-hidden="true"></div>
+
+            <button id="settingsToggle" class="icon-button settings-toggle" type="button" aria-label="Open settings" aria-expanded="false" aria-controls="settingsPanel">
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M12 8.7a3.3 3.3 0 1 0 0 6.6 3.3 3.3 0 0 0 0-6.6Z"></path>
+                <path d="M19.4 15a1.8 1.8 0 0 0 .36 1.99l.06.06a2.1 2.1 0 0 1-2.97 2.97l-.06-.06a1.8 1.8 0 0 0-1.99-.36 1.8 1.8 0 0 0-1.1 1.65v.17a2.1 2.1 0 0 1-4.2 0v-.09A1.8 1.8 0 0 0 8.3 19.7a1.8 1.8 0 0 0-1.99.36l-.06.06a2.1 2.1 0 0 1-2.97-2.97l.06-.06A1.8 1.8 0 0 0 3.7 15.1a1.8 1.8 0 0 0-1.65-1.1h-.17a2.1 2.1 0 0 1 0-4.2h.09A1.8 1.8 0 0 0 3.7 8.6a1.8 1.8 0 0 0-.36-1.99l-.06-.06a2.1 2.1 0 1 1 2.97-2.97l.06.06a1.8 1.8 0 0 0 1.99.36h.1A1.8 1.8 0 0 0 9.5 2.35v-.17a2.1 2.1 0 0 1 4.2 0v.09a1.8 1.8 0 0 0 1.1 1.65 1.8 1.8 0 0 0 1.99-.36l.06-.06a2.1 2.1 0 0 1 2.97 2.97l-.06.06a1.8 1.8 0 0 0-.36 1.99v.1a1.8 1.8 0 0 0 1.65 1.1h.17a2.1 2.1 0 0 1 0 4.2h-.09A1.8 1.8 0 0 0 19.4 15Z"></path>
+              </svg>
+            </button>
           </div>
-          <div class="control-card action-card">
-            <span class="control-header">
-              <span class="control-title">Mode Values</span>
-            </span>
-            <button id="resetMode" class="action-button" type="button">Reset</button>
-          </div>
+
+          <aside id="settingsPanel" class="settings-panel" aria-label="Mode settings" aria-hidden="true">
+            <div class="settings-header">
+              <h2>Harmonic</h2>
+              <button id="settingsClose" class="icon-button close-button" type="button" aria-label="Close settings">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="M18 6 6 18"></path>
+                  <path d="m6 6 12 12"></path>
+                </svg>
+              </button>
+            </div>
+
+            <div class="settings-group">
+              <h3>Motion</h3>
+              <label class="setting-row">
+                <span class="control-header">
+                  <span class="control-title">Gain</span>
+                  <output id="gainValue" class="control-value" for="gain">1.45x</output>
+                </span>
+                <input id="gain" type="range" min="0.6" max="2.6" value="1.45" step="0.05">
+              </label>
+              <label class="setting-row">
+                <span class="control-header">
+                  <span class="control-title">Release</span>
+                  <output id="releaseValue" class="control-value" for="release">0.86</output>
+                </span>
+                <input id="release" type="range" min="0.72" max="0.96" value="0.86" step="0.01">
+              </label>
+            </div>
+
+            <div class="settings-group">
+              <h3>Signal</h3>
+              <label class="setting-row">
+                <span class="control-header">
+                  <span class="control-title">Peak</span>
+                  <output id="peakFalloffValue" class="control-value" for="peakFalloff">86.0</output>
+                </span>
+                <input id="peakFalloff" type="range" min="85" max="99.5" value="86" step="0.5">
+              </label>
+              <label class="setting-row">
+                <span class="control-header">
+                  <span class="control-title">Bands</span>
+                  <output id="barsValue" class="control-value" for="bars">72</output>
+                </span>
+                <input id="bars" type="range" min="32" max="128" value="72" step="4">
+              </label>
+            </div>
+
+            <button id="resetMode" class="reset-button" type="button">
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M3 12a9 9 0 0 1 15.5-6.2"></path>
+                <path d="M18.5 2.8v4h-4"></path>
+                <path d="M21 12a9 9 0 0 1-15.5 6.2"></path>
+                <path d="M5.5 21.2v-4h4"></path>
+              </svg>
+              <span>
+                <strong>Reset Current Mode</strong>
+                <small>Resets only the current mode settings.</small>
+              </span>
+            </button>
+          </aside>
         </div>
       </section>
     </main>

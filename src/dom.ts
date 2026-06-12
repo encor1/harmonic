@@ -18,6 +18,7 @@ export interface UiElements {
   ctx: CanvasRenderingContext2D;
   shell: HTMLElement;
   controlsPanel: HTMLElement;
+  topToolbar: HTMLElement;
   gainControl: HTMLInputElement;
   gainValue: HTMLOutputElement;
   releaseControl: HTMLInputElement;
@@ -30,6 +31,9 @@ export interface UiElements {
   modeButtons: HTMLButtonElement[];
   paletteControl: HTMLSelectElement;
   palettePreview: HTMLElement | null;
+  settingsToggleButton: HTMLButtonElement;
+  settingsCloseButton: HTMLButtonElement;
+  settingsPanel: HTMLElement;
   resetModeButton: HTMLButtonElement;
 }
 
@@ -46,6 +50,7 @@ export function getUiElements(): UiElements {
     ctx,
     shell: requireElement("shell", HTMLElement),
     controlsPanel: requireElement("controls", HTMLElement),
+    topToolbar: requireElement("topToolbar", HTMLElement),
     gainControl: requireElement("gain", HTMLInputElement),
     gainValue: requireElement("gainValue", HTMLOutputElement),
     releaseControl: requireElement("release", HTMLInputElement),
@@ -58,6 +63,9 @@ export function getUiElements(): UiElements {
     modeButtons: Array.from(document.querySelectorAll<HTMLButtonElement>("[data-mode]")),
     paletteControl: requireElement("palette", HTMLSelectElement),
     palettePreview: document.querySelector<HTMLElement>(".palette-preview"),
+    settingsToggleButton: requireElement("settingsToggle", HTMLButtonElement),
+    settingsCloseButton: requireElement("settingsClose", HTMLButtonElement),
+    settingsPanel: requireElement("settingsPanel", HTMLElement),
     resetModeButton: requireElement("resetMode", HTMLButtonElement),
   };
 }

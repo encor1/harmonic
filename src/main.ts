@@ -8,7 +8,7 @@ import { VisualizerRenderer } from "./visualizer/renderer";
 
 const ui = getUiElements();
 const renderer = new VisualizerRenderer(ui);
-setupUpwardSelects([ui.modeControl, ui.paletteControl]);
+setupUpwardSelects([ui.paletteControl]);
 
 const browserCapture = createBrowserCapture(() => resetToIdle());
 const nativeCapture = createNativeCapture(() => undefined);
@@ -17,6 +17,7 @@ let animationFrame = 0;
 let controlsHideTimer = 0;
 let controlsVisible = true;
 let controlsHovered = false;
+let settingsPanelOpen = false;
 const settingsStore = createSettingsStore();
 const defaultControlSettings = createDefaultControlSettings(ui);
 let persistedSettings: PersistedSettings = createInitialSettings(ui);
@@ -29,6 +30,26 @@ function syncControlsChrome(): void {
   ui.shell.classList.toggle("controls-visible", controlsVisible);
   ui.controlsPanel.setAttribute("aria-hidden", String(!controlsVisible));
   inertControls.inert = !controlsVisible;
+}
+
+function syncSettingsPanel(): void {
+  const inertSettingsPanel = ui.settingsPanel as HTMLElement & { inert: boolean };
+
+  ui.settingsPanel.classList.toggle("is-open", settingsPanelOpen);
+  ui.shell.classList.toggle("settings-open", settingsPanelOpen);
+  ui.settingsPanel.setAttribute("aria-hidden", String(!settingsPanelOpen));
+  ui.settingsToggleButton.setAttribute("aria-expanded", String(settingsPanelOpen));
+  ui.settingsToggleButton.setAttribute("aria-label", settingsPanelOpen ? "Close settings" : "Open settings");
+  inertSettingsPanel.inert = !settingsPanelOpen;
+}
+
+function setSettingsPanelOpen(isOpen: boolean): void {
+  if (!isOpen && document.activeElement instanceof HTMLElement && ui.settingsPanel.contains(document.activeElement)) {
+    document.activeElement.blur();
+  }
+
+  settingsPanelOpen = isOpen;
+  syncSettingsPanel();
 }
 
 function hideControls(): void {
@@ -211,6 +232,13 @@ ui.paletteControl.addEventListener("change", () => {
   saveCurrentModeNow();
   renderer.resetModeState();
 });
+ui.settingsToggleButton.addEventListener("click", () => {
+  setSettingsPanelOpen(!settingsPanelOpen);
+});
+ui.settingsCloseButton.addEventListener("click", () => {
+  setSettingsPanelOpen(false);
+  ui.settingsToggleButton.focus();
+});
 ui.resetModeButton.addEventListener("click", () => {
   persistedSettings = resetModeToDefaults(persistedSettings, activeMode, defaultControlSettings);
   applyControlSettings(ui, defaultControlSettings);
@@ -221,23 +249,31 @@ ui.resetModeButton.addEventListener("click", () => {
 window.addEventListener("pointermove", revealControlsTemporarily);
 window.addEventListener("mousemove", revealControlsTemporarily);
 window.addEventListener("pointerdown", revealControlsTemporarily);
-ui.controlsPanel.addEventListener("pointerenter", () => {
-  controlsHovered = true;
-  controlsVisible = true;
-  syncControlsChrome();
-  window.clearTimeout(controlsHideTimer);
-});
-ui.controlsPanel.addEventListener("pointerleave", () => {
+for (const controlsSurface of [ui.topToolbar, ui.settingsPanel]) {
+  controlsSurface.addEventListener("pointerenter", () => {
+    controlsHovered = true;
+    controlsVisible = true;
+    syncControlsChrome();
+    window.clearTimeout(controlsHideTimer);
+  });
+  controlsSurface.addEventListener("pointerleave", () => {
+    controlsHovered = false;
+    scheduleControlsHide();
+  });
+  controlsSurface.addEventListener("focusin", () => {
+    controlsHovered = true;
+    controlsVisible = true;
+    syncControlsChrome();
+    window.clearTimeout(controlsHideTimer);
+  });
+  controlsSurface.addEventListener("focusout", () => {
+    controlsHovered = false;
+    scheduleControlsHide();
+  });
+}
+window.addEventListener("pointerleave", () => {
   controlsHovered = false;
-  scheduleControlsHide();
-});
-ui.controlsPanel.addEventListener("focusin", () => {
-  controlsVisible = true;
-  syncControlsChrome();
-  scheduleControlsHide();
-});
-ui.controlsPanel.addEventListener("focusout", () => {
-  scheduleControlsHide();
+  hideControls();
 });
 window.addEventListener("keydown", (event) => {
   if (event.key !== "Escape") {
@@ -264,6 +300,7 @@ async function initialize(): Promise<void> {
   await loadSettings();
   resetToIdle();
   syncSettingsBackedUi();
+  syncSettingsPanel();
   syncControlsChrome();
   scheduleControlsHide();
   render();
