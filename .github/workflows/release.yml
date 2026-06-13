@@ -38,7 +38,7 @@ jobs:
       - name: Build
         run: npm run build
 
-            - name: Package release artifact
+      - name: Package release artifact
         run: |
           VERSION="${GITHUB_REF_NAME#v}"
           ARCHIVE="harmonic-${VERSION}-linux-x86_64.tar.gz"
