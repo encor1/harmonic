@@ -38,8 +38,11 @@ jobs:
       - name: Build
         run: npm run build
 
-      - name: Package release artifact
+            - name: Package release artifact
         run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+          ARCHIVE="harmonic-${VERSION}-linux-x86_64.tar.gz"
+
           mkdir -p release
 
           cp src-tauri/target/release/harmonic release/harmonic
@@ -48,9 +51,12 @@ jobs:
           cp src-tauri/icons/128x128@2x.png release/harmonic-256.png
           cp src-tauri/icons/icon.png release/harmonic-512.png
 
-          tar -czf harmonic-linux-x86_64.tar.gz -C release .
+          tar -czf "$ARCHIVE" -C release .
+
+          echo "ARCHIVE=$ARCHIVE" >> "$GITHUB_ENV"
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          files: harmonic-linux-x86_64.tar.gz
+          files: ${{ env.ARCHIVE }}
+          overwrite_files: false
